@@ -46,21 +46,9 @@ class ScreenMirror extends JPanel implements Runnable {
 	private int image_Width = 1280;
 	private int image_Height = 720;
 	private byte imageByte2[] = new byte[6220800];
-	private int mouseX = 0, mouseY = 0;
-	private int mouseClickCount = 0;
-	private int mouseButton = 0;
-	private int mousePosition = 0; // 1 == move 2 == click
 	private int screen_Width = 1920;
 	private int screen_Height = 1080;
 	private Boolean isCompress = true;
-	private final int MOUSE_MOVE = 1;
-	private final int MOUSE_PRESSD = 2;
-	private final int MOUSE_RELEASED = 3;
-	private final int MOUSE_DOWN_WHEEL = 4;
-	private final int MOUSE_UP_WHEEL = 5;
-	private final int KEY_PRESSED = 6;
-	private final int KEY_RELEASED = 7;
-	private final int KEY_CHANGE_LANGUAGE = 8;
 	private int count = 0;
 	private Vector<byte[]> imgVec = new Vector<>();
 	ScreenMirror ppp = this;
@@ -112,11 +100,6 @@ class ScreenMirror extends JPanel implements Runnable {
 		try {
 			setLayout(null);
 			socket.setTcpNoDelay(true);
-			/*
-			 * socket.setSendBufferSize(1024 * 1024 * 10);
-			 * socket.setReceiveBufferSize(1024 * 1024 * 10);
-			 */
-			mouseOutputStream = new DataOutputStream(cursorSocket.getOutputStream());
 			keyboardOutputStream = new DataOutputStream(keyboardSocket.getOutputStream());
 			dataInputStream = new DataInputStream(socket.getInputStream());
 			objectInputStream = new ObjectInputStream(socket.getInputStream());
@@ -134,80 +117,6 @@ class ScreenMirror extends JPanel implements Runnable {
 		ss.start();
 		//ss2.start();
 		// lib.UnhookWindowsHookEx(hhk);
-		/*
-		addMouseWheelListener(new MouseWheelListener() {
-
-			@Override
-			public void mouseWheelMoved(MouseWheelEvent e) {
-				try {
-					int n = e.getWheelRotation();
-					if (n < 0) {
-						mouseOutputStream.writeInt(MOUSE_DOWN_WHEEL);
-					} else {
-						mouseOutputStream.writeInt(MOUSE_UP_WHEEL);
-					}
-
-				} catch (IOException e1) {
-					DebugMessage.printDebugMessage(e1);
-				}
-			}
-		});
-		addMouseMotionListener(new MouseMotionListener() {
-
-			@Override
-			public void mouseMoved(MouseEvent e) {
-				// 800 300 1920 1080
-				// x y x y
-				mouseX = e.getX() * screen_Width / getWidth();
-				mouseY = e.getY() * screen_Height / getHeight();
-
-				try {
-					mouseOutputStream.writeInt(MOUSE_MOVE);
-					mouseOutputStream.writeInt(mouseX);
-					mouseOutputStream.writeInt(mouseY);
-				} catch (IOException e1) {
-					DebugMessage.printDebugMessage(e1);
-				}
-			}
-
-			@Override
-			public void mouseDragged(MouseEvent e) {
-				mouseX = e.getX() * screen_Width / getWidth();
-				mouseY = e.getY() * screen_Height / getHeight();
-				try {
-					mouseOutputStream.writeInt(MOUSE_MOVE);
-					mouseOutputStream.writeInt(mouseX);
-					mouseOutputStream.writeInt(mouseY);
-				} catch (IOException e1) {
-					DebugMessage.printDebugMessage(e1);
-				}
-
-			}
-		});
-		addMouseListener(new MouseAdapter() {
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				mouseButton = e.getButton();
-				try {
-					mouseOutputStream.writeInt(MOUSE_PRESSD);
-					mouseOutputStream.writeInt(mouseButton);
-				} catch (IOException e1) {
-					DebugMessage.printDebugMessage(e1);
-				}
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				mouseButton = e.getButton();
-				try {
-					mouseOutputStream.writeInt(MOUSE_RELEASED);
-					mouseOutputStream.writeInt(mouseButton);
-				} catch (IOException e1) {
-					DebugMessage.printDebugMessage(e1);
-				}
-			}
-		});*/
 
 		/*
 		 * addKeyListener(new KeyAdapter() {

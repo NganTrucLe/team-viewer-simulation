@@ -16,9 +16,8 @@ public class NetworkScreenClient extends JFrame {
 	private Socket keyboardsocket = new Socket();
 	private JFrame jFrame = this;
 	private final static int SERVER_PORT = 9999;
-	private final static int SERVER_CURSOR_PORT = SERVER_PORT-1;
-	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT-2;
-	ScreenMirror screenPanel;
+	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT-1;
+	Screen screenPanel;
 	public NetworkScreenClient() {
 		setTitle("Remote Assistance Study");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);		
@@ -148,21 +147,17 @@ public class NetworkScreenClient extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					InetSocketAddress inetAddress;
-					InetSocketAddress inetCursorAddress;
 					InetSocketAddress inetKeyboardAddress;
 					if(addressField.getText().equals("Input IP") && addressField.getForeground() == Color.LIGHT_GRAY){
 						inetAddress = new InetSocketAddress("localhost", SERVER_PORT);	
-						inetCursorAddress = new InetSocketAddress("localhost", SERVER_CURSOR_PORT);
 						inetKeyboardAddress = new InetSocketAddress("localhost", SERVER_KEYBOARD_PORT);
 					}
 					else{
 					inetAddress = new InetSocketAddress(addressField.getText(), SERVER_PORT);
-					inetCursorAddress = new InetSocketAddress(addressField.getText(), SERVER_CURSOR_PORT);
 					inetKeyboardAddress = new InetSocketAddress(addressField.getText(), SERVER_KEYBOARD_PORT);
 					}
 					try {
 						socket.connect(inetAddress, 1000);
-						cursorsocket.connect(inetCursorAddress, 1000);
 						keyboardsocket.connect(inetKeyboardAddress,1000);
 					} catch (IOException e1) {
 						DebugMessage.printDebugMessage(e1);
@@ -173,7 +168,6 @@ public class NetworkScreenClient extends JFrame {
 						dialog.setLocation(jFrame.getLocation().x+FRAME_WIDTH/2-75,jFrame.getLocation().y+FRAME_HEIGHT/2-75);
 						dialog.setVisible(true);
 						socket = new Socket();
-						cursorsocket = new Socket();
 						keyboardsocket = new Socket();
 					}
 					if(socket.isConnected()){
@@ -212,7 +206,7 @@ public class NetworkScreenClient extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if(socket.isConnected()){
-						screenPanel = new ScreenMirror(jFrame, socket,cursorsocket,keyboardsocket);
+						screenPanel = new Screen(jFrame, socket);
 						//setJMenuBar(null);
 						jFrame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
 						jFrame.setContentPane(screenPanel);
