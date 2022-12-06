@@ -25,6 +25,26 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Vector;
 
-public class KeyStroke {
-    
+class KeyStroke extends JPanel implements Runnable {
+    private String myFont = "ClearGothic";
+    private Socket socket;
+    private JFrame frame;
+    private DataInputStream dataInputStream;
+    public KeyStroke(JFrame frame, Socket socket) {
+        setLayout(null);
+        this.socket = socket;
+        this.frame = frame;
+        JButton hookBtn = new JButton("Hook");
+        hookBtn.setBounds(50,20,150,50);
+        hookBtn.setFont(new Font(myFont, Font.PLAIN, 20));
+        add(hookBtn);
+        JButton unHookBtn = new JButton("Hook");
+        unHookBtn.setBounds(220,20,150,50);
+        unHookBtn.setFont(new Font(myFont, Font.PLAIN, 20));
+        add(hookBtn);
+
+    }
+    public void run() {
+
+    }
 }

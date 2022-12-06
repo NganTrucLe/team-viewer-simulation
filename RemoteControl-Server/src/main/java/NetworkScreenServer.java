@@ -20,16 +20,19 @@ import java.util.Vector;
 
 public class NetworkScreenServer extends JFrame {
 	private final static int SERVER_PORT = 9999;
-	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT - 1;
+	private final static int SERVER_SCREEN_PORT = SERVER_PORT - 1;
+	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT - 2;
 	private DataOutputStream imageOutputStream;
 	private ObjectOutputStream objectOutputStream;
 	private String myFont = "????";
 	private BufferedImage screenImage;
 	private Rectangle rect;
 	private MainPanel mainPanel = new MainPanel();
-	private ServerSocket imageServerSocket = null;
+	private ServerSocket serverSocket = null;
+	private ServerSocket screenServerSocket = null;
 	private ServerSocket keyboardServerSocket = null;
-	private Socket imageSocket = null;
+	private Socket socket = null;
+	private Socket screenSocket = null;
 	private Socket keyboardSocket = null;
 	private Robot robot;
 	private int screenWidth, screenHeight;
@@ -46,7 +49,6 @@ public class NetworkScreenServer extends JFrame {
 	private JLabel widthLabel;
 	private JLabel heightLabel;
 	private JLabel compressLabel;
-	private URL cursorURL = getClass().getClassLoader().getResource("cursor.gif");
 	private Boolean isCompress = true;
 	private JFrame fff = this;
 	private final int KEY_PRESSED = 1;
@@ -150,9 +152,7 @@ public class NetworkScreenServer extends JFrame {
 					compressFalseRBtn.setEnabled(false);
 
 					imgThread = new Thread(mainPanel);
-					//KeyBoardThread keyBoardThread = new KeyBoardThread();
 					imgThread.start();
-					//keyBoardThread.start();
 
 				}
 			});
@@ -179,26 +179,83 @@ public class NetworkScreenServer extends JFrame {
 		}
 
 		public void run() {
-
 			try {
 				robot = new Robot();
+				serverSocket = new ServerSocket(SERVER_PORT);
+				socket = serverSocket.accept();
+				ScreenMirror();
+				KeyStroke();
+				
+			} catch (Exception e) {
+				DebugMessage.printDebugMessage(e);
+			}
+		}
+		public void KeyStroke() {
+			try {
+				keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
+				keyboardSocket = keyboardServerSocket.accept();
+				DataOutputStream dataOutputStream = new DataOutputStream(keyboardSocket.getOutputStream());
+				addKeyListener(new KeyAdapter() {
+					@Override public void keyTyped(KeyEvent e) {
+						System.out.println("type" + e.getKeyCode() + "  " + e.getKeyChar()
+						  + "  " + e.getID() + "  " + e.getModifiers()+ "  "+
+						  e.getKeyLocation() + "  " + e.getExtendedKeyCode());
+					}
+					@Override public void keyPressed(KeyEvent e) {
+						try {
+							System.out.println("press" + e.getKeyCode() + " " + e.getKeyChar()
+							+ "  " + e.getID() + "  " + e.getModifiers()+ "  " + e.getKeyLocation() + "  " + e.getExtendedKeyCode());
+							 if(e.getKeyCode() !=0){ dataOutputStream.writeInt(KEY_PRESSED);
+							 dataOutputStream.writeInt(e.getKeyCode()); } 
+						} catch (IOException e1) { 
+							DebugMessage.printDebugMessage(e1); 
+						}
+					}
+					// @Override public void keyReleased(KeyEvent e) {
+					// 	try {
+					// 		System.out.println("released" + e.getKeyCode() + "  " +
+					// 		e.getKeyChar() + "  " + e.getID() + "  " + e.getModifiers()+ "  "+
+					// 		e.getKeyLocation() + "  " + e.getExtendedKeyCode());
+					// 		if(e.getKeyCode() ==0){ if(count >= 1){ count = 0; return; }
+					// 		System.out.println(t.getLocale().toString() + "  " + t.getLocale().getCountry() + "  " +
+					// 		t.getLocale().getDisplayCountry());
+					// 		System.out.println("한글키 눌림-보냄"); 
+					// 		count = 1; 
+					// 		u32.keybd_event((byte)0x15, (byte)0, 0, 0);//누름ffDDDddSS u32.keybd_event((byte) 0x15,
+					// 		dataOutputStream.writeInt(KEY_CHANGE_LANGUAGE);
+					// 		} else{ dataOutputStream.writeInt(KEY_RELEASED);
+					// 		dataOutputStream.writeInt(e.getKeyCode()); }
+					// 	} catch (Exception e1) { 
+					// 		DebugMessage.printDebugMessage(e1); 
+					// 	} 
+					// }
+				});
+				while (true) {
+					
+				}
+			} catch (Exception e1) {
+				
+			}
+			
+		}
+		public void ScreenMirror() {
+			try {
+				robot = new Robot();
+				screenServerSocket = new ServerSocket(SERVER_SCREEN_PORT);
+				screenSocket = screenServerSocket.accept();
 				screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
 				screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
 				rect = new Rectangle(0, 0, screenWidth, screenHeight);
-				imageServerSocket = new ServerSocket(SERVER_PORT);// ImageSERVER
-				keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
-				imageSocket = imageServerSocket.accept();
-				imageSocket.setTcpNoDelay(true);
-				imageOutputStream = new DataOutputStream(imageSocket.getOutputStream());
-				objectOutputStream = new ObjectOutputStream(imageSocket.getOutputStream());
+				screenSocket.setTcpNoDelay(true);
+				imageOutputStream = new DataOutputStream(screenSocket.getOutputStream());
+				objectOutputStream = new ObjectOutputStream(screenSocket.getOutputStream());
 				imageOutputStream.writeInt(screenWidth);
 				imageOutputStream.writeInt(screenHeight);
 				imageOutputStream.writeInt(new_Width);
 				imageOutputStream.writeInt(new_Height);
 				imageOutputStream.writeBoolean(isCompress);
-				//cursor = ImageIO.read(cursorURL);
 			} catch (Exception e) {
-
+				DebugMessage.printDebugMessage(e);
 			}
 			ImgDoubleBufferTh th = new ImgDoubleBufferTh();
 			th.start();			
@@ -234,9 +291,7 @@ public class NetworkScreenServer extends JFrame {
 					}
 				}
 			}
-
 		}
-
 	}
 
 	class ImgDoubleBufferTh extends Thread {
@@ -284,10 +339,10 @@ public class NetworkScreenServer extends JFrame {
 
 	class ServerSocketCloseThread extends Thread {
 		public void run() {
-			if (!imageServerSocket.isClosed() || keyboardServerSocket.isClosed()) {
+			if (!screenServerSocket.isClosed()) {
 				try {
-					imageServerSocket.close();
-					keyboardServerSocket.close();
+					screenServerSocket.close();
+					//keyboardServerSocket.close();
 				} catch (IOException e) {
 					DebugMessage.printDebugMessage(e);
 				}
@@ -295,22 +350,22 @@ public class NetworkScreenServer extends JFrame {
 		}
 	}
 
-	class KeyBoardThread extends Thread {
-		int result;
-		int keypress = 0;
-		public void run() {
-			try {
-				keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
-				keyboardSocket = keyboardServerSocket.accept();
-				DataInputStream dataInputStream = new DataInputStream(keyboardSocket.getInputStream());
-				while (true) {
-					int keyboardState = dataInputStream.readInt();
-				}
-			} catch (Exception e1) {
+	// class KeyBoardThread extends Thread {
+	// 	int result;
+	// 	int keypress = 0;
+	// 	public void run() {
+	// 		try {
+	// 			keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
+	// 			keyboardSocket = keyboardServerSocket.accept();
+	// 			DataOutputStream dataOutputStream = new DataOutputStream(keyboardSocket.getOutputStream());
+	// 			while (true) {
+					
+	// 			}
+	// 		} catch (Exception e1) {
 				
-			}
-		}
-	}
+	// 		}
+	// 	}
+	// }
 	// 	}
 	// 	// public void run() {
 	// 	// 	try {
@@ -337,4 +392,9 @@ public class NetworkScreenServer extends JFrame {
 	// 	// 	}
 	// 	// }
 	// }
+	@Override
+	public synchronized void addKeyListener(KeyListener l) {
+		// TODO Auto-generated method stub
+		super.addKeyListener(l);
+	}
 }
