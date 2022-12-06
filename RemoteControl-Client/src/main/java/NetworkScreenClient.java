@@ -5,6 +5,12 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+//import java.awt.event.ActionEvent;
+//import java.awt.event.ActionListener;
+//import java.io.DataOutputStream;
+//import java.net.InetAddress;
+
+
 public class NetworkScreenClient extends JFrame {
 	private ControlPanel controlPanel = new ControlPanel();
 	private String myFont = "ClearGothic";
@@ -12,13 +18,20 @@ public class NetworkScreenClient extends JFrame {
 	private final int FRAME_WIDTH = 800;
 	private final int FRAME_HEIGHT = 600;
 	private Socket socket = new Socket();
-	private Socket screensocket = new Socket();
+	private Socket cursorsocket = new Socket();
 	private Socket keyboardsocket = new Socket();
+	private Socket apprunningsocket = new Socket();
 	private JFrame jFrame = this;
 	private final static int SERVER_PORT = 9999;
-	private final static int SERVER_SCREEN_PORT = SERVER_PORT - 1;
-	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT - 2;
-	Screen screenPanel;
+	private final static int SERVER_CURSOR_PORT = SERVER_PORT-1;
+	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT-2;
+	private final static int SERVER_APPRUNNING_PORT = SERVER_PORT - 3;
+	ScreenMirror screenPanel;
+	AppRunning app;
+	//private DataOutputStream dout = null;
+    private Socket s = new Socket();
+	//private Socket ss = new Socket();
+
 	public NetworkScreenClient() {
 		setTitle("Remote Assistance Study");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);		
@@ -26,7 +39,14 @@ public class NetworkScreenClient extends JFrame {
 		createJMenu();
 		setContentPane(controlPanel);
 		setSize(FRAME_WIDTH, FRAME_HEIGHT);
+		//setUndecorated(true);
 		setVisible(true);	
+		/*addMouseMotionListener(new MouseAdapter() {
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				setLocation(e.getXOnScreen(), e.getYOnScreen());
+			}
+		});	*/
 		setLocation(200, 200);
 	}
 	public void createJMenu(){
@@ -141,14 +161,27 @@ public class NetworkScreenClient extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					InetSocketAddress inetAddress;
+					InetSocketAddress inetCursorAddress;
+					InetSocketAddress inetKeyboardAddress;
+					InetSocketAddress inetAppRunningAddress;
 					if(addressField.getText().equals("Input IP") && addressField.getForeground() == Color.LIGHT_GRAY){
 						inetAddress = new InetSocketAddress("localhost", SERVER_PORT);	
+						inetCursorAddress = new InetSocketAddress("localhost", SERVER_CURSOR_PORT);
+						inetKeyboardAddress = new InetSocketAddress("localhost", SERVER_KEYBOARD_PORT);
+						inetAppRunningAddress = new InetSocketAddress("localhost", SERVER_APPRUNNING_PORT);
 					}
 					else{
 					inetAddress = new InetSocketAddress(addressField.getText(), SERVER_PORT);
+					inetCursorAddress = new InetSocketAddress(addressField.getText(), SERVER_CURSOR_PORT);
+					inetKeyboardAddress = new InetSocketAddress(addressField.getText(), SERVER_KEYBOARD_PORT);
+					inetAppRunningAddress = new InetSocketAddress(addressField.getText(), SERVER_APPRUNNING_PORT);
 					}
 					try {
 						socket.connect(inetAddress, 1000);
+						cursorsocket.connect(inetCursorAddress, 1000);
+						keyboardsocket.connect(inetKeyboardAddress,1000);
+						apprunningsocket.connect(inetAppRunningAddress,1000);
+
 					} catch (IOException e1) {
 						DebugMessage.printDebugMessage(e1);
 						JLabel message = new JLabel("Connect Failed");
@@ -158,6 +191,9 @@ public class NetworkScreenClient extends JFrame {
 						dialog.setLocation(jFrame.getLocation().x+FRAME_WIDTH/2-75,jFrame.getLocation().y+FRAME_HEIGHT/2-75);
 						dialog.setVisible(true);
 						socket = new Socket();
+						cursorsocket = new Socket();
+						keyboardsocket = new Socket();
+						apprunningsocket=new Socket();
 					}
 					if(socket.isConnected()){
 						try {
@@ -194,64 +230,31 @@ public class NetworkScreenClient extends JFrame {
 			screenBtn.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					InetSocketAddress inetScreenAddress;
-					if(addressField.getText().equals("Input IP") && addressField.getForeground() == Color.LIGHT_GRAY){
-						inetScreenAddress = new InetSocketAddress("localhost", SERVER_SCREEN_PORT);	
-					}
-					else{
-					inetScreenAddress = new InetSocketAddress(addressField.getText(), SERVER_SCREEN_PORT);
-					}
-					try {
-						screensocket.connect(inetScreenAddress, 1000);
-					} catch (IOException e1) {
-						DebugMessage.printDebugMessage(e1);
-						JLabel message = new JLabel("Connect Failed");
-						JDialog dialog = new JDialog(jFrame,"Alert");
-						dialog.add(message);
-						dialog.setSize(150,150);
-						dialog.setLocation(jFrame.getLocation().x+FRAME_WIDTH/2-75,jFrame.getLocation().y+FRAME_HEIGHT/2-75);
-						dialog.setVisible(true);
-						screensocket = new Socket();
-					}
-					if(screensocket.isConnected()){
-						screenPanel = new Screen(jFrame, screensocket);
+					if(socket.isConnected()){
+						screenPanel = new ScreenMirror(jFrame, socket,cursorsocket,keyboardsocket);
+						//setJMenuBar(null);
 						jFrame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
 						jFrame.setContentPane(screenPanel);
 						screenPanel.requestFocus();
+						//setExtendedState(JFrame.MAXIMIZED_BOTH);
 						jFrame.revalidate();
 						screenPanel.requestFocus();
 					}
 				}
 			});
-			keyStrokeBtn.addActionListener(new ActionListener() {
+			appBtn.addActionListener(new ActionListener() {
 				@Override
-				public void actionPerformed(ActionEvent e) {
-					InetSocketAddress inetKeyboardAddress;
-					if(addressField.getText().equals("Input IP") && addressField.getForeground() == Color.LIGHT_GRAY){
-						inetKeyboardAddress = new InetSocketAddress("localhost", SERVER_KEYBOARD_PORT);	
-					}
-					else{
-					inetKeyboardAddress = new InetSocketAddress(addressField.getText(), SERVER_KEYBOARD_PORT);
-					}
-					try {
-						keyboardsocket.connect(inetKeyboardAddress, 1000);
-					} catch (IOException e1) {
-						DebugMessage.printDebugMessage(e1);
-						JLabel message = new JLabel("Connect Failed");
-						JDialog dialog = new JDialog(jFrame,"Alert");
-						dialog.add(message);
-						dialog.setSize(150,150);
-						dialog.setLocation(jFrame.getLocation().x+FRAME_WIDTH/2-75,jFrame.getLocation().y+FRAME_HEIGHT/2-75);
-						dialog.setVisible(true);
-						keyboardsocket = new Socket();
-					}
-					if(keyboardsocket.isConnected()) {
-						screenPanel = new Screen(jFrame, keyboardsocket);
+            	public void actionPerformed(ActionEvent e) {
+					if(socket.isConnected()){
+						app = new AppRunning(jFrame, socket);
+						//setJMenuBar(null);
 						jFrame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-						jFrame.setContentPane(screenPanel);
-						screenPanel.requestFocus();
+						jFrame.setContentPane(app);
+						app.requestFocus();
+						//setExtendedState(JFrame.MAXIMIZED_BOTH);
 						jFrame.revalidate();
-						screenPanel.requestFocus();
+						app.requestFocus();
+					
 					}
 				}
 			});
