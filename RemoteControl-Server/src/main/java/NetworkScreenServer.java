@@ -183,7 +183,7 @@ public class NetworkScreenServer extends JFrame {
 				robot = new Robot();
 				serverSocket = new ServerSocket(SERVER_PORT);
 				socket = serverSocket.accept();
-				ScreenMirror();
+				//ScreenMirror();
 				KeyStroke();
 				
 			} catch (Exception e) {
@@ -193,6 +193,7 @@ public class NetworkScreenServer extends JFrame {
 		public void KeyStroke() {
 			try {
 				keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
+				System.out.println("Waiting to connect");
 				keyboardSocket = keyboardServerSocket.accept();
 				DataOutputStream dataOutputStream = new DataOutputStream(keyboardSocket.getOutputStream());
 				addKeyListener(new KeyAdapter() {

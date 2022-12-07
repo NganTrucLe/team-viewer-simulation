@@ -246,12 +246,13 @@ public class NetworkScreenClient extends JFrame {
 						keyboardsocket = new Socket();
 					}
 					if(keyboardsocket.isConnected()) {
-						screenPanel = new Screen(jFrame, keyboardsocket);
+						System.out.println("Connected Key stroke");
+						KeyStroke screen = new KeyStroke(jFrame, keyboardsocket);
 						jFrame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-						jFrame.setContentPane(screenPanel);
-						screenPanel.requestFocus();
+						jFrame.setContentPane(screen);
+						screen.requestFocus();
 						jFrame.revalidate();
-						screenPanel.requestFocus();
+						screen.requestFocus();
 					}
 				}
 			});
