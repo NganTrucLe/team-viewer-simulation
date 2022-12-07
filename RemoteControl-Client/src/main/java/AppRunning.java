@@ -1,31 +1,17 @@
 import com.sun.jna.Library;
 import com.sun.jna.Native;
-import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef.HMODULE;
-import com.sun.jna.platform.win32.WinDef.LPARAM;
-import com.sun.jna.platform.win32.WinDef.LRESULT;
-import com.sun.jna.platform.win32.WinDef.WPARAM;
-import com.sun.jna.platform.win32.WinUser;
 import com.sun.jna.platform.win32.WinUser.HHOOK;
-import com.sun.jna.platform.win32.WinUser.KBDLLHOOKSTRUCT;
-import com.sun.jna.platform.win32.WinUser.LowLevelKeyboardProc;
-import com.sun.jna.platform.win32.WinUser.MSG;
-import org.xerial.snappy.Snappy;
+
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
-import java.awt.image.Raster;
 import java.io.*;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Vector;
 
-import javax.imageio.ImageIO;
 
 class AppRunning extends JPanel implements Runnable {
     private JTextArea APList;
@@ -35,74 +21,34 @@ class AppRunning extends JPanel implements Runnable {
 	private String myFont = "ClearGothic";
     private Socket socket;
 	private JFrame frame;
-	private DataOutputStream mouseOutputStream;
 	private DataInputStream dataInputStream;
 	private ObjectInputStream objectInputStream;
-	private BufferedWriter bufferedWriter;
-	private int image_Width = 1280;
-	private int image_Height = 720;
-	private byte imageByte2[] = new byte[6220800];
-	private int mouseX = 0, mouseY = 0;
-	private int mouseClickCount = 0;
-	private int mouseButton = 0;
-	private int mousePosition = 0; // 1 == move 2 == click
-	private int app_Width = 1920;
-	private int app_Height = 1080;
-	private Boolean isCompress = true;
-	private final int MOUSE_MOVE = 1;
-	private final int MOUSE_PRESSD = 2;
-	private final int MOUSE_RELEASED = 3;
-	private final int MOUSE_DOWN_WHEEL = 4;
-	private final int MOUSE_UP_WHEEL = 5;
-	private final int KEY_PRESSED = 6;
-	private final int KEY_RELEASED = 7;
-	private final int KEY_CHANGE_LANGUAGE = 8;
-	private int count = 0;
     AppRunning ppp=this;
 	HHOOK hhk = null;
 	HMODULE hMod = Kernel32.INSTANCE.GetModuleHandle(null);
 	Thread thread;
 	Object lock = new Object();
-
+    public interface User32jna extends Library {
+        AppRunning.User32jna INSTANCE = null;
+        User32jna INSTACE = (User32jna) Native.loadLibrary("user32.dll", User32jna.class);
+    }
 	public AppRunning(JFrame frame, Socket socket) {
 		setLayout(null);
 		this.socket = socket;
 		this.frame = frame;
-		System.out.println(socket.getInetAddress());
-		try {
-			setLayout(null);
-			socket.setTcpNoDelay(true);
-			dataInputStream = new DataInputStream(socket.getInputStream());
-            objectInputStream = new ObjectInputStream(socket.getInputStream());
-            String apps = dataInputStream.readUTF();
-            display(frame, apps);
-		} catch (IOException e) {
-			System.out.println(e.toString());
-		}
-		thread = new Thread(this);
-		thread.start();
-	}
-    private void display(JFrame jFrame, String apps){
-        // jFrame = new JFrame("App running");
-        // jFrame.setMinimumSize(new Dimension(500, 400));
-        // jFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        // jFrame.setLayout(new BorderLayout());
-        // jFrame.setBackground(Color.BLACK);
-        // jFrame.setForeground(Color.WHITE);
-
-        APList = new JTextArea(apps, 10, 5);
-        APList.setEditable(false);
-        APList.setCaretPosition(0);
-        APList.setFont(new Font("Consolas", Font.PLAIN, 12));
-        APList.setBackground(Color.BLACK);
-        APList.setForeground(Color.WHITE);
-
+        // try {
+        //     String apps = dataInputStream.readUTF();
+        //     System.out.println(apps);
+        // } catch (IOException e) {
+        //     System.out.println(e.toString());
+        // }
+		APList = new JTextArea(10, 5);
         JScrollPane scrollPane = new JScrollPane(APList);
         scrollPane.createHorizontalScrollBar();
         scrollPane.setBackground(Color.BLACK);
         scrollPane.setForeground(Color.WHITE);
-
-        jFrame.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBounds(20,90,600,400);
+        add(scrollPane);
 
         pidText = new JTextField(25);
         pidText.setBackground(Color.BLACK);
@@ -113,31 +59,21 @@ class AppRunning extends JPanel implements Runnable {
         killApp.setFocusable(false);
         killApp.setBackground(Color.BLACK);
         killApp.setForeground(Color.WHITE);
+        killApp.setBounds(50,20,150,50);
 
         openApp = new JButton("Open");
         openApp.addActionListener(this::actionPerformed);
         openApp.setFocusable(false);
         openApp.setBackground(Color.BLACK);
         openApp.setForeground(Color.WHITE);
+        openApp.setBounds(220,20,150,50);
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new FlowLayout());
-        buttonPanel.setBackground(Color.BLACK);
-        buttonPanel.setForeground(Color.WHITE);
-
-        buttonPanel.add(pidText);
-        buttonPanel.add(killApp);
-        buttonPanel.add(openApp);
-        buttonPanel.setPreferredSize(new Dimension(500, 50));
-
-        jFrame.add(buttonPanel, BorderLayout.SOUTH);
-
-//        Open jFrame in center of screen
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-        jFrame.setLocation(dim.width / 2 - jFrame.getSize().width / 2, dim.height / 2 - jFrame.getSize().height / 2);
-        jFrame.setVisible(true);
-    }
-
+        add(pidText);
+        add(killApp);
+        add(openApp);
+		thread = new Thread(this);
+		thread.start();
+	}
     public static void sendApp(Socket s) throws Exception{
         DataOutputStream cout = new DataOutputStream(s.getOutputStream());
         cout.writeUTF(GetApplication());
