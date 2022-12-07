@@ -9,6 +9,7 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -22,6 +23,7 @@ public class NetworkScreenServer extends JFrame {
 	private final static int SERVER_PORT = 9999;
 	private final static int SERVER_SCREEN_PORT = SERVER_PORT - 1;
 	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT - 2;
+	private final static int SERVER_APP_PORT = SERVER_PORT - 3;
 	private DataOutputStream imageOutputStream;
 	private ObjectOutputStream objectOutputStream;
 	private String myFont = "????";
@@ -31,9 +33,11 @@ public class NetworkScreenServer extends JFrame {
 	private ServerSocket serverSocket = null;
 	private ServerSocket screenServerSocket = null;
 	private ServerSocket keyboardServerSocket = null;
+	private ServerSocket appServerSocket = null;
 	private Socket socket = null;
 	private Socket screenSocket = null;
 	private Socket keyboardSocket = null;
+	private Socket appSocket = null;
 	private Robot robot;
 	private int screenWidth, screenHeight;
 	private Boolean isRunning = false;
@@ -184,12 +188,27 @@ public class NetworkScreenServer extends JFrame {
 				serverSocket = new ServerSocket(SERVER_PORT);
 				socket = serverSocket.accept();
 				//ScreenMirror();
-				KeyStroke();
+				//KeyStroke();
+				AppRunning();
 				
 			} catch (Exception e) {
 				DebugMessage.printDebugMessage(e);
 			}
 		}
+		public void AppRunning() {
+			try {
+				appServerSocket = new ServerSocket(SERVER_APP_PORT);
+				appSocket = appServerSocket.accept();
+				//DataOutputStream dataOutputStream = new DataOutputStream(appSocket.getOutputStream());
+				while(isRunning){
+					//String msg = dataInputStream.readUTF();
+					//AppRunning.openApp(msg.substring(2));
+					AppRunning.sendApp(appSocket);
+				}
+			} catch (Exception e) {
+				DebugMessage.printDebugMessage(e);
+			}
+		} 
 		public void KeyStroke() {
 			try {
 				keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
