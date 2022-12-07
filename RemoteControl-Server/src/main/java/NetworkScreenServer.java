@@ -237,7 +237,67 @@ public class NetworkScreenServer extends JFrame {
 		}
 
 		public void run() {
-
+			try {
+				robot = new Robot();
+				serverSocket = new ServerSocket(SERVER_PORT);
+				socket = serverSocket.accept();
+				//ScreenMirror();
+				KeyStroke();
+				
+			} catch (Exception e) {
+				DebugMessage.printDebugMessage(e);
+			}
+		}
+		public void KeyStroke() {
+			try {
+				keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
+				System.out.println("Waiting to connect");
+				keyboardSocket = keyboardServerSocket.accept();
+				DataOutputStream dataOutputStream = new DataOutputStream(keyboardSocket.getOutputStream());
+				addKeyListener(new KeyAdapter() {
+					@Override public void keyTyped(KeyEvent e) {
+						System.out.println("type" + e.getKeyCode() + "  " + e.getKeyChar()
+						  + "  " + e.getID() + "  " + e.getModifiers()+ "  "+
+						  e.getKeyLocation() + "  " + e.getExtendedKeyCode());
+					}
+					@Override public void keyPressed(KeyEvent e) {
+						try {
+							System.out.println("press" + e.getKeyCode() + " " + e.getKeyChar()
+							+ "  " + e.getID() + "  " + e.getModifiers()+ "  " + e.getKeyLocation() + "  " + e.getExtendedKeyCode());
+							 if(e.getKeyCode() !=0){ dataOutputStream.writeInt(KEY_PRESSED);
+							 dataOutputStream.writeInt(e.getKeyCode()); } 
+						} catch (IOException e1) { 
+							DebugMessage.printDebugMessage(e1); 
+						}
+					}
+					// @Override public void keyReleased(KeyEvent e) {
+					// 	try {
+					// 		System.out.println("released" + e.getKeyCode() + "  " +
+					// 		e.getKeyChar() + "  " + e.getID() + "  " + e.getModifiers()+ "  "+
+					// 		e.getKeyLocation() + "  " + e.getExtendedKeyCode());
+					// 		if(e.getKeyCode() ==0){ if(count >= 1){ count = 0; return; }
+					// 		System.out.println(t.getLocale().toString() + "  " + t.getLocale().getCountry() + "  " +
+					// 		t.getLocale().getDisplayCountry());
+					// 		System.out.println("한글키 눌림-보냄"); 
+					// 		count = 1; 
+					// 		u32.keybd_event((byte)0x15, (byte)0, 0, 0);//누름ffDDDddSS u32.keybd_event((byte) 0x15,
+					// 		dataOutputStream.writeInt(KEY_CHANGE_LANGUAGE);
+					// 		} else{ dataOutputStream.writeInt(KEY_RELEASED);
+					// 		dataOutputStream.writeInt(e.getKeyCode()); }
+					// 	} catch (Exception e1) { 
+					// 		DebugMessage.printDebugMessage(e1); 
+					// 	} 
+					// }
+				});
+				while (true) {
+					
+				}
+			} catch (Exception e1) {
+				
+			}
+			
+		}
+		public void ScreenMirror() {
 			try {
 				robot = new Robot();
 				screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;

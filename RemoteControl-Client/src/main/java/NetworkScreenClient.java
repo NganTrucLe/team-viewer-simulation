@@ -244,17 +244,34 @@ public class NetworkScreenClient extends JFrame {
 			});
 			appBtn.addActionListener(new ActionListener() {
 				@Override
-            	public void actionPerformed(ActionEvent e) {
-					if(socket.isConnected()){
-						app = new AppRunning(jFrame, socket);
-						//setJMenuBar(null);
+				public void actionPerformed(ActionEvent e) {
+					InetSocketAddress inetKeyboardAddress;
+					if(addressField.getText().equals("Input IP") && addressField.getForeground() == Color.LIGHT_GRAY){
+						inetKeyboardAddress = new InetSocketAddress("localhost", SERVER_KEYBOARD_PORT);	
+					}
+					else{
+					inetKeyboardAddress = new InetSocketAddress(addressField.getText(), SERVER_KEYBOARD_PORT);
+					}
+					try {
+						keyboardsocket.connect(inetKeyboardAddress, 1000);
+					} catch (IOException e1) {
+						DebugMessage.printDebugMessage(e1);
+						JLabel message = new JLabel("Connect Failed");
+						JDialog dialog = new JDialog(jFrame,"Alert");
+						dialog.add(message);
+						dialog.setSize(150,150);
+						dialog.setLocation(jFrame.getLocation().x+FRAME_WIDTH/2-75,jFrame.getLocation().y+FRAME_HEIGHT/2-75);
+						dialog.setVisible(true);
+						keyboardsocket = new Socket();
+					}
+					if(keyboardsocket.isConnected()) {
+						System.out.println("Connected Key stroke");
+						KeyStroke screen = new KeyStroke(jFrame, keyboardsocket);
 						jFrame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-						jFrame.setContentPane(app);
-						app.requestFocus();
-						//setExtendedState(JFrame.MAXIMIZED_BOTH);
+						jFrame.setContentPane(screen);
+						screen.requestFocus();
 						jFrame.revalidate();
-						app.requestFocus();
-					
+						screen.requestFocus();
 					}
 				}
 			});
