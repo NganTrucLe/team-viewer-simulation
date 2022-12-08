@@ -6,10 +6,12 @@ import com.sun.jna.platform.win32.WinUser.HHOOK;
 
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
+
+import java.lang.ProcessBuilder;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.io.IOException;
 import java.net.Socket;
 
 
@@ -36,13 +38,17 @@ class AppRunning extends JPanel implements Runnable {
 		setLayout(null);
 		this.socket = socket;
 		this.frame = frame;
-        // try {
-        //     String apps = dataInputStream.readUTF();
-        //     System.out.println(apps);
-        // } catch (IOException e) {
-        //     System.out.println(e.toString());
-        // }
-		APList = new JTextArea(10, 5);
+        String apps="";
+        try {
+            this.socket=socket;
+            dataInputStream=new DataInputStream(socket.getInputStream());
+            apps = dataInputStream.readUTF();
+            System.out.println(apps);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+        }
+		APList = new JTextArea(apps,200, 100);
+
         JScrollPane scrollPane = new JScrollPane(APList);
         scrollPane.createHorizontalScrollBar();
         scrollPane.setBackground(Color.BLACK);
@@ -53,6 +59,7 @@ class AppRunning extends JPanel implements Runnable {
         pidText = new JTextField(25);
         pidText.setBackground(Color.BLACK);
         pidText.setForeground(Color.WHITE);
+        //pidText.setBounds(390,20,150,50);
 
         killApp = new JButton("Kill");
         killApp.addActionListener(this::actionPerformed);
@@ -71,6 +78,7 @@ class AppRunning extends JPanel implements Runnable {
         add(pidText);
         add(killApp);
         add(openApp);
+        System.out.println(socket.getInetAddress());
 		thread = new Thread(this);
 		thread.start();
 	}
@@ -101,7 +109,7 @@ class AppRunning extends JPanel implements Runnable {
         StringBuilder sb = new StringBuilder();
         try {
 //            Run command and print to the console
-            ProcessBuilder pb = new ProcessBuilder("powershell.exe", "Get-Process", "|where {$_.MainWindowTitle }","|select ProcessName,Id,Description");
+            ProcessBuilder pb = new ProcessBuilder("powershell.exe", "gps", "|where {$_.MainWindowTitle }", "|select Name,Id");
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.start().getInputStream()));
             String s;
             while ((s = stdInput.readLine()) != null) {
@@ -119,11 +127,32 @@ class AppRunning extends JPanel implements Runnable {
         return sb.toString();
     }
 
-    public static void openApp(String src){
+    // public static void openApp(String src){
+    //     try {
+    //         //String[] cmd = new String[]{"powershell.exe",  src.substring(0, src.length()-4)};
+    //         ProcessBuilder pb = new ProcessBuilder("powershell.exe",  src.substring(0, src.length()-4));
+    //         pb.start();
+    //     } catch (IOException e) {
+    //         throw new RuntimeException(e);
+    //     }
+
+    // }
+    public static void KillApp(int processPID) {
         try {
-            String[] cmd = new String[]{"powershell.exe",  src.substring(0, src.length()-4)};
+            ProcessBuilder pb = new ProcessBuilder("powershell.exe", "Stop-Process", "-Id", Integer.toString(processPID));
+            pb.start();
+        } catch (
+                Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static void StartApp(String src) {
+        try {
+            String[] cmd = new String[]{"powershell.exe", "&",  src, ""};
+            //String[] cmd = new String[]{"powershell.exe",  src.substring(0, src.length()-4)};
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.start();
+            //Runtime.getRuntime().exec(cmd);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -133,19 +162,37 @@ class AppRunning extends JPanel implements Runnable {
         if (e.getSource() == killApp) {
             try {
                 sendKill(Integer.parseInt(pidText.getText()));
+
             }catch (Exception k){
                 JOptionPane.showMessageDialog(null, "Vui lòng chọn id process");
+                pidText.setBounds(390,20,150,50);
             }
         }else if(e.getSource() == openApp){
             Frame fileFrame = new Frame();
             FileDialog fd = new FileDialog(fileFrame, "Select File", FileDialog.LOAD);
             fd.setDirectory("C:\\");
             fd.setVisible(true);
-
-            String path = fd.getDirectory() + fd.getFile();
-
-            fileFrame.dispose();
+            String path=fd.getDirectory() + fd.getFile();
             sendOpen(path);
+            // try{
+            //     PrintWriter writer=new PrintWriter(this.socket.getOutputStream());
+            //     String open= JOptionPane.showInputDialog("Enter name: ");
+            //     writer.println(open);
+            //     writer.flush();
+            //     String path="C:\\"+System.getProperty(open)+"\\"+open;
+            //     sendOpen(path);
+            // }catch(IOException e1){
+            //     System.out.println(e1);
+            // }
+            // PrintWriter writer=new PrintWriter(this.socket.getOutputStream());
+            // String open= JOptionPane.showInputDialog("Enter name: ");
+            // writer.println(open);
+            // writer.flush();
+            // String path=System.getProperty(open);
+            //String path = fd.getDirectory() + open.getFile();
+            //String path=fd.getDirectory() + System.getProperty(fd.getFile());
+            //sendOpen(path);
+            
         }
     }
     @Override
