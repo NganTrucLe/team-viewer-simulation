@@ -24,6 +24,7 @@ public class NetworkScreenServer extends JFrame {
 	private final static int SERVER_SCREEN_PORT = SERVER_PORT - 1;
 	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT - 2;
 	private final static int SERVER_APP_PORT = SERVER_PORT - 3;
+	private final static int SERVER_SHUTDOWN_PORT = SERVER_PORT - 4;
 	private DataOutputStream imageOutputStream;
 	private ObjectOutputStream objectOutputStream;
 	private String myFont = "????";
@@ -34,10 +35,12 @@ public class NetworkScreenServer extends JFrame {
 	private ServerSocket screenServerSocket = null;
 	private ServerSocket keyboardServerSocket = null;
 	private ServerSocket appServerSocket = null;
+	private ServerSocket shutdownServerSocket = null;
 	private Socket socket = null;
 	private Socket screenSocket = null;
 	private Socket keyboardSocket = null;
 	private Socket appSocket = null;
+	private Socket shutdownSocket = null;
 	private Robot robot;
 	private int screenWidth, screenHeight;
 	private Boolean isRunning = false;
@@ -189,12 +192,24 @@ public class NetworkScreenServer extends JFrame {
 				socket = serverSocket.accept();
 				//ScreenMirror();
 				//KeyStroke();
-				AppRunning();
+				//AppRunning();
+				ShutDown();
 				
 			} catch (Exception e) {
 				DebugMessage.printDebugMessage(e);
 			}
 		}
+		public void ShutDown() {
+            try {
+                shutdownServerSocket = new ServerSocket(SERVER_SHUTDOWN_PORT);
+                shutdownSocket = shutdownServerSocket.accept();
+                while(isRunning){
+                    ShutDownServer.computer();
+                }
+            } catch (Exception e) {
+                DebugMessage.printDebugMessage(e);
+            }
+        } 
 		public void AppRunning() {
 			try {
 				appServerSocket = new ServerSocket(SERVER_APP_PORT);
@@ -363,6 +378,7 @@ public class NetworkScreenServer extends JFrame {
 				try {
 					screenServerSocket.close();
 					//keyboardServerSocket.close();
+					shutdownSocket.close();
 				} catch (IOException e) {
 					DebugMessage.printDebugMessage(e);
 				}
