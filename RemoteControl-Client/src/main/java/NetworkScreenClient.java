@@ -178,8 +178,8 @@ public class NetworkScreenClient extends JFrame {
 							appBtn.setEnabled(true);
 							shutDownBtn.setEnabled(true);
 							screenBtn.setEnabled(true);
-							keyStrokeBtn.setEnabled(true);
-							registryBtn.setEnabled(true);
+							//keyStrokeBtn.setEnabled(true);
+							//registryBtn.setEnabled(true);
 							
 						} catch (InterruptedException e1) {
 							DebugMessage.printDebugMessage(e1);							
