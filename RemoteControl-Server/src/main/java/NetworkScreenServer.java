@@ -214,12 +214,33 @@ public class NetworkScreenServer extends JFrame {
 			try {
 				appServerSocket = new ServerSocket(SERVER_APP_PORT);
 				appSocket = appServerSocket.accept();
-				//DataOutputStream dataOutputStream = new DataOutputStream(appSocket.getOutputStream());
+				DataInputStream cin = new DataInputStream(appSocket.getInputStream());
+				AppRunning.sendApp((appSocket));
 				while(isRunning){
-					//String msg = dataInputStream.readUTF();
-					//AppRunning.openApp(msg.substring(2));
-					AppRunning.sendApp(appSocket);
+					String msg=cin.readUTF();
+					switch (msg.substring(0, 2)){
+						case "KP":
+							AppRunning.KillApp(Integer.parseInt(msg.substring(2)));
+							break;
+						case "OA":
+							AppRunning.StartApp(msg.substring(2));
+						default:
+							break;
+					}
 				}
+				// AppRunning.sendApp(appSocket);
+				// String msg=cin.readUTF();
+				// switch (msg.substring(0, 2)){
+                //     case "KP":
+                //     	AppRunning.KillApp(Integer.parseInt(msg.substring(2)));
+                //         break;
+                //     // case "OP":
+                //     //     ProcessRunning.StartProcess(msg.substring(2));
+                //     case "OA":
+                //         AppRunning.openApp(msg.substring(2));
+                //     default:
+                //         break;
+                // }
 			} catch (Exception e) {
 				DebugMessage.printDebugMessage(e);
 			}
