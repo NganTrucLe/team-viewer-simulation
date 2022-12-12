@@ -203,6 +203,12 @@ public class NetworkScreenServer extends JFrame {
 				AppRunning.sendApp((appSocket));
 				while(isRunning){
 					String msg=cin.readUTF();
+					switch (msg){
+						case "RS":
+							AppRunning.sendApp((appSocket));
+						default:
+							break;
+					}
 					switch (msg.substring(0, 2)){
 						case "KP":
 							AppRunning.KillApp(Integer.parseInt(msg.substring(2)));

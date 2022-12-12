@@ -12,6 +12,7 @@ import java.lang.ProcessBuilder;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.io.IOException;
 import java.net.Socket;
 
 
@@ -19,6 +20,7 @@ class AppRunning extends JPanel implements Runnable {
     private JTextArea APList;
     private JButton killApp;
     private JButton openApp;
+    private JButton refreshApp;
     private JTextField pidText;
 	private String myFont = "ClearGothic";
     private Socket socket;
@@ -30,6 +32,7 @@ class AppRunning extends JPanel implements Runnable {
 	HMODULE hMod = Kernel32.INSTANCE.GetModuleHandle(null);
 	Thread thread;
 	Object lock = new Object();
+    String apps="";
     public interface User32jna extends Library {
         AppRunning.User32jna INSTANCE = null;
         User32jna INSTACE = (User32jna) Native.loadLibrary("user32.dll", User32jna.class);
@@ -38,7 +41,6 @@ class AppRunning extends JPanel implements Runnable {
 		setLayout(null);
 		this.socket = socket;
 		this.frame = frame;
-        String apps="";
         try {
             this.socket=socket;
             dataInputStream=new DataInputStream(socket.getInputStream());
@@ -48,36 +50,32 @@ class AppRunning extends JPanel implements Runnable {
             System.out.println(e.toString());
         }
 		APList = new JTextArea(apps,200, 100);
-
         JScrollPane scrollPane = new JScrollPane(APList);
         scrollPane.createHorizontalScrollBar();
-        scrollPane.setBackground(Color.BLACK);
-        scrollPane.setForeground(Color.WHITE);
         scrollPane.setBounds(20,90,600,400);
         add(scrollPane);
 
         pidText = new JTextField(25);
-        pidText.setBackground(Color.BLACK);
-        pidText.setForeground(Color.WHITE);
-        //pidText.setBounds(390,20,150,50);
 
         killApp = new JButton("Kill");
         killApp.addActionListener(this::actionPerformed);
         killApp.setFocusable(false);
-        killApp.setBackground(Color.BLACK);
-        killApp.setForeground(Color.WHITE);
-        killApp.setBounds(50,20,150,50);
+        killApp.setBounds(65,20,150,50);
 
         openApp = new JButton("Open");
         openApp.addActionListener(this::actionPerformed);
         openApp.setFocusable(false);
-        openApp.setBackground(Color.BLACK);
-        openApp.setForeground(Color.WHITE);
-        openApp.setBounds(220,20,150,50);
+        openApp.setBounds(235,20,150,50);
+
+        refreshApp = new JButton("Refresh");
+        refreshApp.addActionListener(this::actionPerformed);
+        refreshApp.setFocusable(false);
+        refreshApp.setBounds(405,20,150,50);
 
         add(pidText);
         add(killApp);
         add(openApp);
+        add(refreshApp);
         System.out.println(socket.getInetAddress());
 		thread = new Thread(this);
 		thread.start();
@@ -86,7 +84,23 @@ class AppRunning extends JPanel implements Runnable {
         DataOutputStream cout = new DataOutputStream(s.getOutputStream());
         cout.writeUTF(GetApplication());
     }
-
+    private void sendRefresh(){
+        try {
+            DataOutputStream cout = new DataOutputStream(this.socket.getOutputStream());
+            cout.writeUTF("RS");
+            try {
+                apps = dataInputStream.readUTF();
+                System.out.println(apps);
+            } catch (IOException e) {
+                System.out.println(e.toString());
+            }
+            APList.getDocument().remove(0, APList.getDocument().getLength());
+            APList.getDocument().insertString(0, apps, null);
+            frame.revalidate();
+        }catch (Exception e){
+            System.out.println(e);
+        }
+    }
     private void sendKill(int k){
         try {
             DataOutputStream cout = new DataOutputStream(this.socket.getOutputStream());
@@ -126,73 +140,31 @@ class AppRunning extends JPanel implements Runnable {
         }
         return sb.toString();
     }
-
-    // public static void openApp(String src){
-    //     try {
-    //         //String[] cmd = new String[]{"powershell.exe",  src.substring(0, src.length()-4)};
-    //         ProcessBuilder pb = new ProcessBuilder("powershell.exe",  src.substring(0, src.length()-4));
-    //         pb.start();
-    //     } catch (IOException e) {
-    //         throw new RuntimeException(e);
-    //     }
-
-    // }
-    public static void KillApp(int processPID) {
-        try {
-            ProcessBuilder pb = new ProcessBuilder("powershell.exe", "Stop-Process", "-Id", Integer.toString(processPID));
-            pb.start();
-        } catch (
-                Exception e) {
-            e.printStackTrace();
-        }
-    }
-    public static void StartApp(String src) {
-        try {
-            String[] cmd = new String[]{"powershell.exe", "&",  src, ""};
-            //String[] cmd = new String[]{"powershell.exe",  src.substring(0, src.length()-4)};
-            ProcessBuilder pb = new ProcessBuilder(cmd);
-            pb.start();
-            //Runtime.getRuntime().exec(cmd);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private void actionPerformed(ActionEvent e) {
         if (e.getSource() == killApp) {
-            try {
-                sendKill(Integer.parseInt(pidText.getText()));
-
-            }catch (Exception k){
-                JOptionPane.showMessageDialog(null, "Vui lòng chọn id process");
-                pidText.setBounds(390,20,150,50);
-            }
+            try{
+                PrintWriter writer=new PrintWriter(this.socket.getOutputStream());
+                String kill= JOptionPane.showInputDialog("Enter ID: ");
+                writer.println(kill);
+                sendKill(Integer.parseInt(kill));
+            }catch(IOException e1){
+                System.out.println(e1);
+        }
         }else if(e.getSource() == openApp){
-            Frame fileFrame = new Frame();
-            FileDialog fd = new FileDialog(fileFrame, "Select File", FileDialog.LOAD);
-            fd.setDirectory("C:\\");
-            fd.setVisible(true);
-            String path=fd.getDirectory() + fd.getFile();
-            sendOpen(path);
-            // try{
-            //     PrintWriter writer=new PrintWriter(this.socket.getOutputStream());
-            //     String open= JOptionPane.showInputDialog("Enter name: ");
-            //     writer.println(open);
-            //     writer.flush();
-            //     String path="C:\\"+System.getProperty(open)+"\\"+open;
-            //     sendOpen(path);
-            // }catch(IOException e1){
-            //     System.out.println(e1);
-            // }
-            // PrintWriter writer=new PrintWriter(this.socket.getOutputStream());
-            // String open= JOptionPane.showInputDialog("Enter name: ");
-            // writer.println(open);
-            // writer.flush();
-            // String path=System.getProperty(open);
-            //String path = fd.getDirectory() + open.getFile();
-            //String path=fd.getDirectory() + System.getProperty(fd.getFile());
-            //sendOpen(path);
-            
+            try{
+                PrintWriter writer=new PrintWriter(this.socket.getOutputStream());
+                String open= JOptionPane.showInputDialog("Enter name: ");
+                writer.println(open);
+                sendOpen(open);
+            }catch(IOException e1){
+                System.out.println(e1);
+            }
+        }else if(e.getSource()==refreshApp){
+            try{
+                sendRefresh();
+            }catch(Exception k){
+                System.out.println(k);
+            }
         }
     }
     @Override

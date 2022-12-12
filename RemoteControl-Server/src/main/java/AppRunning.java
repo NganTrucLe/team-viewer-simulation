@@ -20,6 +20,7 @@ class AppRunning extends JPanel implements Runnable {
     private JTextArea APList;
     private JButton killApp;
     private JButton openApp;
+    private JButton refreshApp;
     private JTextField pidText;
 	private String myFont = "ClearGothic";
     private Socket socket;
@@ -38,47 +39,6 @@ class AppRunning extends JPanel implements Runnable {
 	public AppRunning(JFrame frame, Socket socket) {
 		setLayout(null);
 		this.socket = socket;
-		this.frame = frame;
-        String apps="";
-        try {
-            this.socket=socket;
-            dataInputStream=new DataInputStream(socket.getInputStream());
-            apps = dataInputStream.readUTF();
-            System.out.println(apps);
-        } catch (IOException e) {
-            System.out.println(e.toString());
-        }
-		APList = new JTextArea(apps,200, 100);
-
-        JScrollPane scrollPane = new JScrollPane(APList);
-        scrollPane.createHorizontalScrollBar();
-        scrollPane.setBackground(Color.BLACK);
-        scrollPane.setForeground(Color.WHITE);
-        scrollPane.setBounds(20,90,600,400);
-        add(scrollPane);
-
-        pidText = new JTextField(25);
-        pidText.setBackground(Color.BLACK);
-        pidText.setForeground(Color.WHITE);
-
-        killApp = new JButton("Kill");
-        killApp.addActionListener(this::actionPerformed);
-        killApp.setFocusable(false);
-        killApp.setBackground(Color.BLACK);
-        killApp.setForeground(Color.WHITE);
-        killApp.setBounds(50,20,150,50);
-
-        openApp = new JButton("Open");
-        openApp.addActionListener(this::actionPerformed);
-        openApp.setFocusable(false);
-        openApp.setBackground(Color.BLACK);
-        openApp.setForeground(Color.WHITE);
-        openApp.setBounds(220,20,150,50);
-
-        add(pidText);
-        add(killApp);
-        add(openApp);
-        System.out.println(socket.getInetAddress());
 		thread = new Thread(this);
 		thread.start();
 	}
@@ -86,25 +46,6 @@ class AppRunning extends JPanel implements Runnable {
         DataOutputStream cout = new DataOutputStream(s.getOutputStream());
         cout.writeUTF(GetApplication());
     }
-
-    private void sendKill(int k){
-        try {
-            DataOutputStream cout = new DataOutputStream(this.socket.getOutputStream());
-            cout.writeUTF("KP"+ String.valueOf(k));
-        }catch (Exception e){
-            System.out.println(e);
-        }
-    }
-
-    private void sendOpen(String prs){
-        try {
-            DataOutputStream cout = new DataOutputStream(this.socket.getOutputStream());
-            cout.writeUTF("OA"+ prs);
-        }catch (Exception e){
-            System.out.println(e);
-        }
-    }
-
     private static String GetApplication() {
         StringBuilder sb = new StringBuilder();
         try {
@@ -126,16 +67,6 @@ class AppRunning extends JPanel implements Runnable {
         }
         return sb.toString();
     }
-
-    // public static void openApp(String src){
-    //     try {
-    //         //String[] cmd = new String[]{"powershell.exe",  src.substring(0, src.length()-4)};
-    //         ProcessBuilder pb = new ProcessBuilder("powershell.exe",  src.substring(0, src.length()-4));
-    //         pb.start();
-    //     } catch (IOException e) {
-    //         throw new RuntimeException(e);
-    //     }
-    // }
     public static void KillApp(int processPID) {
         try {
             ProcessBuilder pb = new ProcessBuilder("powershell.exe", "Stop-Process", "-Id", Integer.toString(processPID));
@@ -154,45 +85,6 @@ class AppRunning extends JPanel implements Runnable {
             //throw new RuntimeException(e);
             e.printStackTrace();
         }
-    }
-    private void actionPerformed(ActionEvent e) {
-        if (e.getSource() == killApp) {
-            try {
-                sendKill(Integer.parseInt(pidText.getText()));
-
-            }catch (Exception k){
-                JOptionPane.showMessageDialog(null, "Vui lòng chọn id process");
-                pidText.setBounds(390,20,150,50);
-            }
-        }else if(e.getSource() == openApp){
-            Frame fileFrame = new Frame();
-            FileDialog fd = new FileDialog(fileFrame, "Select File", FileDialog.LOAD);
-            fd.setDirectory("C:\\");
-            fd.setVisible(true);
-
-            String path = fd.getDirectory() + fd.getFile();
-            //String path=fd.getFile();
-            fileFrame.dispose();
-            sendOpen(path);
-            // try {
-            //     sendOpen(pidText.getText());
-            //     pidText.setBounds(390,20,150,50);
-
-            // }catch (Exception k){
-            //     JOptionPane.showMessageDialog(null, "Vui lòng chọn id process");
-            //     //pidText.setBounds(390,20,150,50);
-            // }
-        //     try{
-        //         PrintWriter writer=new PrintWriter(this.socket.getOutputStream());
-        //         //String open= JOptionPane.showInputDialog("Enter name: ");
-        //         String open="Zoom";
-        //         //writer.println(open);
-        //         //writer.flush();
-        //         sendOpen(open);
-        //     }catch(IOException e1){
-        //         System.out.println(e1);
-        // }
-    }
     }
     @Override
     public void run() {
