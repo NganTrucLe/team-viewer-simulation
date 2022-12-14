@@ -82,7 +82,7 @@ public class NetworkScreenServer extends JFrame {
 		User32jna INSTANCE = (User32jna) Native.load("user32.dll", User32jna.class);
 		public void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
 	}
-
+	
 	class MainPanel extends JPanel implements Runnable {
 
 		public MainPanel() {
@@ -190,10 +190,10 @@ public class NetworkScreenServer extends JFrame {
 				robot = new Robot();
 				serverSocket = new ServerSocket(SERVER_PORT);
 				socket = serverSocket.accept();
-				//ScreenMirror();
+				ScreenMirror();
 				//KeyStroke();
 				//AppRunning();
-				ShutDown();
+				//ShutDown();
 				
 			} catch (Exception e) {
 				DebugMessage.printDebugMessage(e);
