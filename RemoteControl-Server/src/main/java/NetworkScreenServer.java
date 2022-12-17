@@ -1,6 +1,19 @@
 import com.sun.jna.Library;
 import com.sun.jna.Native;
+import com.sun.jna.Pointer;
 import org.xerial.snappy.Snappy;
+
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.WinDef.HMODULE;
+import com.sun.jna.platform.win32.WinDef.LPARAM;
+import com.sun.jna.platform.win32.WinDef.LRESULT;
+import com.sun.jna.platform.win32.WinDef.WPARAM;
+import com.sun.jna.platform.win32.WinUser;
+import com.sun.jna.platform.win32.WinUser.HHOOK;
+import com.sun.jna.platform.win32.WinUser.KBDLLHOOKSTRUCT;
+import com.sun.jna.platform.win32.WinUser.LowLevelKeyboardProc;
+import com.sun.jna.platform.win32.WinUser.MSG;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -8,11 +21,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
@@ -24,6 +33,8 @@ public class NetworkScreenServer extends JFrame {
 	private final static int SERVER_SCREEN_PORT = SERVER_PORT - 1;
 	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT - 2;
 	private final static int SERVER_APP_PORT = SERVER_PORT - 3;
+	private final static int SERVER_SHUTDOWN_PORT = SERVER_PORT - 4;
+	private final static int SERVER_PROCESS_PORT = SERVER_PORT-5;
 	private DataOutputStream imageOutputStream;
 	private ObjectOutputStream objectOutputStream;
 	private String myFont = "????";
@@ -34,14 +45,17 @@ public class NetworkScreenServer extends JFrame {
 	private ServerSocket screenServerSocket = null;
 	private ServerSocket keyboardServerSocket = null;
 	private ServerSocket appServerSocket = null;
+	private ServerSocket shutdownServerSocket = null;
+	private ServerSocket processServerSocket = null;
 	private Socket socket = null;
 	private Socket screenSocket = null;
 	private Socket keyboardSocket = null;
 	private Socket appSocket = null;
-	private Robot robot;
+	private Socket shutdownSocket = null;
+	private Socket processSocket = null;
 	private int screenWidth, screenHeight;
 	private Boolean isRunning = false;
-	private Thread imgThread;
+	private Thread mainThread;
 	private static int new_Width = 1920;
 	private static int new_Height = 1080;
 	private JButton startBtn;
@@ -59,11 +73,18 @@ public class NetworkScreenServer extends JFrame {
 	private final int KEY_RELEASED = 2;
 	private final int KEY_CHANGE_LANGUAGE = 8;
 	int count = 0, count2 = 0;
+	User32 lib = User32.INSTANCE;
 	private User32jna u32 = User32jna.INSTANCE;
+	HHOOK hhk = null;
+	HMODULE hMod = Kernel32.INSTANCE.GetModuleHandle(null);
 	private int buffersize = 1;
 	private BufferedImage[] img = new BufferedImage[buffersize];
 	private Vector<byte[]> imgvec = new Vector<>();
 
+	public interface User32jna extends Library {
+		User32jna INSTANCE = (User32jna) Native.loadLibrary("user32.dll", User32jna.class);
+		public void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+	}
 	public NetworkScreenServer() {
 		setTitle("Network Screen Server");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -75,10 +96,6 @@ public class NetworkScreenServer extends JFrame {
 		widthTextfield.requestFocus();
 	}
 
-	public interface User32jna extends Library {
-		User32jna INSTANCE = (User32jna) Native.load("user32.dll", User32jna.class);
-		public void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
-	}
 
 	class MainPanel extends JPanel implements Runnable {
 
@@ -130,6 +147,11 @@ public class NetworkScreenServer extends JFrame {
 			add(compressTrueRBtn);
 			add(compressFalseRBtn);
 			stopBtn.setEnabled(false);
+			System.out.println("Hello");
+			
+			KeyboardThread kbThread = new KeyboardThread();
+			System.out.println("Start thread");
+			kbThread.start();
 			startBtn.addActionListener(new ActionListener() {
 
 				@Override
@@ -154,10 +176,8 @@ public class NetworkScreenServer extends JFrame {
 					}
 					compressTrueRBtn.setEnabled(false);
 					compressFalseRBtn.setEnabled(false);
-
-					imgThread = new Thread(mainPanel);
-					imgThread.start();
-
+					mainThread = new Thread(mainPanel);
+					mainThread.start();
 				}
 			});
 			stopBtn.addActionListener(new ActionListener() {
@@ -171,7 +191,7 @@ public class NetworkScreenServer extends JFrame {
 					isRunning = false;
 					ServerSocketCloseThread closeThread = new ServerSocketCloseThread();
 					closeThread.start();
-					// imgThread.interrupt();
+					// mainThread.interrupt();
 					stopBtn.setEnabled(false);
 					startBtn.setEnabled(true);
 					compressTrueRBtn.setEnabled(true);
@@ -180,60 +200,99 @@ public class NetworkScreenServer extends JFrame {
 				}
 			});
 			widthTextfield.transferFocus();
+			requestFocus();
 		}
 
 		public void run() {
+			System.out.println("in run");
 			try {
-				robot = new Robot();
 				serverSocket = new ServerSocket(SERVER_PORT);
 				socket = serverSocket.accept();
-				//ScreenMirror();
-				//KeyStroke();
-				AppRunning();
-				
+				ShutDownThread shutDownThread = new ShutDownThread();
+				shutDownThread.start();
+				AppRunningThread appRunningThread = new AppRunningThread();
+				appRunningThread.start();
+				ScreenThread screenThread = new ScreenThread();
+				screenThread.start();
+				ProcessRunningThread processRunningThread=new ProcessRunningThread();
+				processRunningThread.start();;
+						
 			} catch (Exception e) {
 				DebugMessage.printDebugMessage(e);
 			}
 		}
-		public void AppRunning() {
-			try {
-				appServerSocket = new ServerSocket(SERVER_APP_PORT);
-				appSocket = appServerSocket.accept();
-				DataInputStream cin = new DataInputStream(appSocket.getInputStream());
-				AppRunning.sendApp((appSocket));
-				while(isRunning){
-					String msg=cin.readUTF();
-					switch (msg){
-						case "RS":
-							AppRunning.sendApp((appSocket));
-						default:
-							break;
+		class ShutDownThread extends Thread{
+			public void run() {
+				try {
+					shutdownServerSocket = new ServerSocket(SERVER_SHUTDOWN_PORT);
+					shutdownSocket = shutdownServerSocket.accept();
+					while(isRunning){
+						ShutDownServer.computer();
 					}
-					switch (msg.substring(0, 2)){
-						case "KP":
-							AppRunning.KillApp(Integer.parseInt(msg.substring(2)));
-							break;
-						case "OA":
-							AppRunning.StartApp(msg.substring(2));
-						default:
-							break;
-					}
+				} catch (Exception e) {
+					DebugMessage.printDebugMessage(e);
 				}
-				// AppRunning.sendApp(appSocket);
-				// String msg=cin.readUTF();
-				// switch (msg.substring(0, 2)){
-                //     case "KP":
-                //     	AppRunning.KillApp(Integer.parseInt(msg.substring(2)));
-                //         break;
-                //     // case "OP":
-                //     //     ProcessRunning.StartProcess(msg.substring(2));
-                //     case "OA":
-                //         AppRunning.openApp(msg.substring(2));
-                //     default:
-                //         break;
-                // }
-			} catch (Exception e) {
-				DebugMessage.printDebugMessage(e);
+			}
+            
+        } 
+		class AppRunningThread extends Thread {
+			public void run() {
+				try {
+					appServerSocket = new ServerSocket(SERVER_APP_PORT);
+					appSocket = appServerSocket.accept();
+					DataInputStream cin = new DataInputStream(appSocket.getInputStream());
+					AppRunning.sendApp((appSocket));
+					while(isRunning){
+						String msg=cin.readUTF();
+						switch(msg){
+							case "RS":
+								AppRunning.sendApp(appSocket);
+							default:
+								break;
+						}
+						switch (msg.substring(0, 2)){
+							case "KP":
+								AppRunning.KillApp(Integer.parseInt(msg.substring(2)));
+								break;
+							case "OA":
+								AppRunning.StartApp(msg.substring(2));
+							default:
+								break;
+						}
+					}
+				} catch (Exception e) {
+					DebugMessage.printDebugMessage(e);
+				}
+			}
+		} 
+		class ProcessRunningThread extends Thread {
+			public void run() {
+				try {
+					processServerSocket = new ServerSocket(SERVER_PROCESS_PORT);
+					processSocket =processServerSocket.accept();
+					DataInputStream cin = new DataInputStream(processSocket.getInputStream());
+					ProcessRunning.sendProcess((processSocket));
+					while(isRunning){
+						String msg=cin.readUTF();
+						switch(msg){
+							case "RS":
+								ProcessRunning.sendProcess(processSocket);
+							default:
+								break;
+						}
+						switch (msg.substring(0, 2)){
+							case "KP":
+								ProcessRunning.KillProcess(Integer.parseInt(msg.substring(2)));
+								break;
+							case "OA":
+								ProcessRunning.StartProcess(msg.substring(2));
+							default:
+								break;
+						}
+					}
+				} catch (Exception e) {
+					DebugMessage.printDebugMessage(e);
+				}
 			}
 		} 
 		public void KeyStroke() {
@@ -242,99 +301,63 @@ public class NetworkScreenServer extends JFrame {
 				System.out.println("Waiting to connect");
 				keyboardSocket = keyboardServerSocket.accept();
 				DataOutputStream dataOutputStream = new DataOutputStream(keyboardSocket.getOutputStream());
-				addKeyListener(new KeyAdapter() {
-					@Override public void keyTyped(KeyEvent e) {
-						System.out.println("type" + e.getKeyCode() + "  " + e.getKeyChar()
-						  + "  " + e.getID() + "  " + e.getModifiers()+ "  "+
-						  e.getKeyLocation() + "  " + e.getExtendedKeyCode());
-					}
-					@Override public void keyPressed(KeyEvent e) {
-						try {
-							System.out.println("press" + e.getKeyCode() + " " + e.getKeyChar()
-							+ "  " + e.getID() + "  " + e.getModifiers()+ "  " + e.getKeyLocation() + "  " + e.getExtendedKeyCode());
-							 if(e.getKeyCode() !=0){ dataOutputStream.writeInt(KEY_PRESSED);
-							 dataOutputStream.writeInt(e.getKeyCode()); } 
-						} catch (IOException e1) { 
-							DebugMessage.printDebugMessage(e1); 
-						}
-					}
-					// @Override public void keyReleased(KeyEvent e) {
-					// 	try {
-					// 		System.out.println("released" + e.getKeyCode() + "  " +
-					// 		e.getKeyChar() + "  " + e.getID() + "  " + e.getModifiers()+ "  "+
-					// 		e.getKeyLocation() + "  " + e.getExtendedKeyCode());
-					// 		if(e.getKeyCode() ==0){ if(count >= 1){ count = 0; return; }
-					// 		System.out.println(t.getLocale().toString() + "  " + t.getLocale().getCountry() + "  " +
-					// 		t.getLocale().getDisplayCountry());
-					// 		System.out.println("한글키 눌림-보냄"); 
-					// 		count = 1; 
-					// 		u32.keybd_event((byte)0x15, (byte)0, 0, 0);//누름ffDDDddSS u32.keybd_event((byte) 0x15,
-					// 		dataOutputStream.writeInt(KEY_CHANGE_LANGUAGE);
-					// 		} else{ dataOutputStream.writeInt(KEY_RELEASED);
-					// 		dataOutputStream.writeInt(e.getKeyCode()); }
-					// 	} catch (Exception e1) { 
-					// 		DebugMessage.printDebugMessage(e1); 
-					// 	} 
-					// }
-				});
-				while (true) {
-					
-				}
-			} catch (Exception e1) {
-				
+			}
+			catch (Exception e){
+				DebugMessage.printDebugMessage(e);
 			}
 			
 		}
-		public void ScreenMirror() {
-			try {
-				robot = new Robot();
-				screenServerSocket = new ServerSocket(SERVER_SCREEN_PORT);
-				screenSocket = screenServerSocket.accept();
-				screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
-				screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
-				rect = new Rectangle(0, 0, screenWidth, screenHeight);
-				screenSocket.setTcpNoDelay(true);
-				imageOutputStream = new DataOutputStream(screenSocket.getOutputStream());
-				objectOutputStream = new ObjectOutputStream(screenSocket.getOutputStream());
-				imageOutputStream.writeInt(screenWidth);
-				imageOutputStream.writeInt(screenHeight);
-				imageOutputStream.writeInt(new_Width);
-				imageOutputStream.writeInt(new_Height);
-				imageOutputStream.writeBoolean(isCompress);
-			} catch (Exception e) {
-				DebugMessage.printDebugMessage(e);
-			}
-			ImgDoubleBufferTh th = new ImgDoubleBufferTh();
-			th.start();			
-			int index = 0;
-			Runtime runtime = Runtime.getRuntime();
-			while (isRunning) {
-				try {	
-					byte[] imageByte = imgvec.get(0);
-					if(imgvec.size() == 3){
-						synchronized (th) {
-							th.notify();
-						}						
-					}
-					if (isCompress) {
-						imageOutputStream.writeInt(imageByte.length);
-						imageOutputStream.write(imageByte);
-						imageOutputStream.flush();
-					} else {
-						imageOutputStream.writeInt(imageByte.length);
-						imageOutputStream.write(imageByte);
-						imageOutputStream.flush();
-					}
+		class ScreenThread extends Thread {
+			public void run() {
+				try {
+					screenServerSocket = new ServerSocket(SERVER_SCREEN_PORT);
+					screenSocket = screenServerSocket.accept();
+					screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+					screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
+					rect = new Rectangle(0, 0, screenWidth, screenHeight);
+					screenSocket.setTcpNoDelay(true);
+					imageOutputStream = new DataOutputStream(screenSocket.getOutputStream());
+					objectOutputStream = new ObjectOutputStream(screenSocket.getOutputStream());
+					imageOutputStream.writeInt(screenWidth);
+					imageOutputStream.writeInt(screenHeight);
+					imageOutputStream.writeInt(new_Width);
+					imageOutputStream.writeInt(new_Height);
+					imageOutputStream.writeBoolean(isCompress);
 				} catch (Exception e) {
+					DebugMessage.printDebugMessage(e);
 				}
-				if (runtime.totalMemory() / 1024 / 1024 > 500)
-					System.gc();
-				if (imgvec.size() > 1) {
-					imgvec.remove(0);
-					index++;								
-					if(index == 30){
-						index=0;
+				ImgDoubleBufferTh th = new ImgDoubleBufferTh();
+				th.start();			
+				int index = 0;
+				Runtime runtime = Runtime.getRuntime();
+				while (isRunning) {
+					try {	
+						byte[] imageByte = imgvec.get(0);
+						if(imgvec.size() == 3){
+							synchronized (th) {
+								th.notify();
+							}						
+						}
+						if (isCompress) {
+							imageOutputStream.writeInt(imageByte.length);
+							imageOutputStream.write(imageByte);
+							imageOutputStream.flush();
+						} else {
+							imageOutputStream.writeInt(imageByte.length);
+							imageOutputStream.write(imageByte);
+							imageOutputStream.flush();
+						}
+					} catch (Exception e) {
+					}
+					if (runtime.totalMemory() / 1024 / 1024 > 500)
 						System.gc();
+					if (imgvec.size() > 1) {
+						imgvec.remove(0);
+						index++;								
+						if(index == 30){
+							index=0;
+							System.gc();
+						}
 					}
 				}
 			}
@@ -386,59 +409,89 @@ public class NetworkScreenServer extends JFrame {
 
 	class ServerSocketCloseThread extends Thread {
 		public void run() {
-			if (!screenServerSocket.isClosed()) {
+			if (!serverSocket.isClosed()) {
 				try {
 					screenServerSocket.close();
-					//keyboardServerSocket.close();
+					keyboardServerSocket.close();
+					appSocket.close();
+					shutdownSocket.close();
+					processSocket.close();
 				} catch (IOException e) {
 					DebugMessage.printDebugMessage(e);
 				}
 			}
 		}
 	}
+	
+	class KeyboardThread extends Thread {
+		int result;
+		int keypress = 0;
+		synchronized public void run() {
+			LowLevelKeyboardProc rr = new LowLevelKeyboardProc() {
+				@Override
+				public LRESULT callback(int nCode, WPARAM wParam, KBDLLHOOKSTRUCT info) {
+					System.out.println("in thread");
+					try {
+						 System.out.println(info.vkCode);
+						if (info.vkCode == 21) {
+							System.out.println("한영");
+							if (keypress == 0) {
+								u32.keybd_event((byte) 0x15, (byte) 0, 0, 0);// 누름ffDDDddSS
+								u32.keybd_event((byte) 0x15, (byte) 00, (byte) 0x0002, 0);// 땜
+								keypress++;
+							} else {
+								keypress = 0;
+							}
 
-	// class KeyBoardThread extends Thread {
-	// 	int result;
-	// 	int keypress = 0;
-	// 	public void run() {
-	// 		try {
-	// 			keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
-	// 			keyboardSocket = keyboardServerSocket.accept();
-	// 			DataOutputStream dataOutputStream = new DataOutputStream(keyboardSocket.getOutputStream());
-	// 			while (true) {
-					
-	// 			}
-	// 		} catch (Exception e1) {
-				
-	// 		}
-	// 	}
-	// }
-	// 	}
-	// 	// public void run() {
-	// 	// 	try {
-	// 	// 		keyboardServerSocket = new ServerSocket(SERVER_KEBOARD_PORT);
-	// 	// 		keyboardSocket = keyboardServerSocket.accept();
-	// 	// 		DataInputStream dataInputStream = new DataInputStream(keyboardSocket.getInputStream());
-	// 	// 		while (true) {
-	// 	// 			int keyboardState = dataInputStream.readInt();
-	// 	// 			if (keyboardState == KEY_PRESSED) {// KEYBOARD PRESSED
-	// 	// 				int keyCode = dataInputStream.readInt();
-	// 	// 				// System.out.println(keyCode + "????");
-	// 	// 				u32.keybd_event((byte) keyCode, (byte) 0, 0, 0);// ????ffDDDddSS
-	// 	// 				// robot.keyPress(keyCode);
-	// 	// 			} else if (keyboardState == KEY_RELEASED) {
-	// 	// 				int keyCode = dataInputStream.readInt();
-	// 	// 				// System.out.println(keyCode + "????");
-	// 	// 				u32.keybd_event((byte) keyCode, (byte) 00, (byte) 0x0002, 0);// ??
-	// 	// 				// robot.keyRelease(keyCode);
-	// 	// 			}
-	// 	// 			yield();
-	// 	// 		}
-	// 	// 	} catch (Exception e) {
+						}
+						if (nCode >= 0) {
 
-	// 	// 	}
-	// 	// }
-	// }
+							switch (wParam.intValue()) {
+							case WinUser.WM_KEYUP:
+								System.out.println(KEY_RELEASED);
+								System.out.println(info.vkCode);
+								break;
+							case WinUser.WM_KEYDOWN:
+								System.out.println(KEY_PRESSED);
+								System.out.println(info.vkCode);
+								break;
+							case WinUser.WM_SYSKEYUP:
+								System.out.println(KEY_RELEASED);
+								System.out.println(info.vkCode);
+								break;
+							case WinUser.WM_SYSKEYDOWN:
+								System.out.println(KEY_PRESSED);
+								System.out.println(info.vkCode);
+								break;
+							}
+
+						}
+					} catch (Exception e) {
+						System.out.println("Error");
+						DebugMessage.printDebugMessage(e);
+					}
+
+			 		Pointer ptr = info.getPointer();
+
+			 		long peer = Pointer.nativeValue(ptr);
+
+			 		return lib.CallNextHookEx(hhk, nCode, wParam, new LPARAM(peer));
+				}
+			};
+			//hhk = lib.SetWindowsHookEx(WinUser.WH_KEYBOARD_LL, rr, hMod, 0);
+			// MSG msg = new MSG();
+			// while ((result = lib.GetMessage(msg, null, 0, 0)) != 0) {
+			// 	if (result == -1) {
+			// 		System.err.println("error in get message");
+			// 		break;
+			// 	} else {
+			// 		System.err.println("got message");
+			// 		lib.TranslateMessage(msg);
+			// 		lib.DispatchMessage(msg);
+			// 	}
+			// }
+		}
+	}
 	@Override
 	public synchronized void addKeyListener(KeyListener l) {
 		// TODO Auto-generated method stub

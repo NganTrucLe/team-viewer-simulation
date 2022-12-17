@@ -15,11 +15,15 @@ public class NetworkScreenClient extends JFrame {
 	private Socket screensocket = new Socket();
 	private Socket keyboardsocket = new Socket();
 	private Socket appsocket = new Socket();
+	private Socket shutdownsocket = new Socket();
+	private Socket processsocket = new Socket();
 	private JFrame jFrame = this;
 	private final static int SERVER_PORT = 9999;
 	private final static int SERVER_SCREEN_PORT = SERVER_PORT - 1;
 	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT - 2;
 	private final static int SERVER_APP_PORT = SERVER_PORT - 3;
+	private final static int SERVER_SHUTDOWN_PORT = SERVER_PORT - 4;
+	private final static int SERVER_PROCESS_PORT = SERVER_PORT-5;
 	public NetworkScreenClient() {
 		setTitle("Remote Assistance Study");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);		
@@ -176,8 +180,8 @@ public class NetworkScreenClient extends JFrame {
 							appBtn.setEnabled(true);
 							shutDownBtn.setEnabled(true);
 							screenBtn.setEnabled(true);
-							keyStrokeBtn.setEnabled(true);
-							registryBtn.setEnabled(true);
+							//keyStrokeBtn.setEnabled(true);
+							//registryBtn.setEnabled(true);
 							
 						} catch (InterruptedException e1) {
 							DebugMessage.printDebugMessage(e1);							
@@ -221,6 +225,38 @@ public class NetworkScreenClient extends JFrame {
 						appPanel.requestFocus();
 						jFrame.revalidate();
 						appPanel.requestFocus();
+					}
+				}
+			});
+			processBtn.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					InetSocketAddress inetProcessAddress;
+					if(addressField.getText().equals("Input IP") && addressField.getForeground() == Color.LIGHT_GRAY){
+						inetProcessAddress = new InetSocketAddress("localhost", SERVER_PROCESS_PORT);	
+					}
+					else{
+					inetProcessAddress = new InetSocketAddress(addressField.getText(), SERVER_PROCESS_PORT);
+					}
+					try {
+						screensocket.connect(inetProcessAddress, 1000);
+					} catch (IOException e1) {
+						DebugMessage.printDebugMessage(e1);
+						JLabel message = new JLabel("Connect Failed");
+						JDialog dialog = new JDialog(jFrame,"Alert");
+						dialog.add(message);
+						dialog.setSize(150,150);
+						dialog.setLocation(jFrame.getLocation().x+FRAME_WIDTH/2-75,jFrame.getLocation().y+FRAME_HEIGHT/2-75);
+						dialog.setVisible(true);
+						processsocket = new Socket();
+					}
+					if(screensocket.isConnected()){
+						ProcessRunning processPanel = new ProcessRunning(jFrame, screensocket);
+						jFrame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+						jFrame.setContentPane(processPanel);
+						processPanel.requestFocus();
+						jFrame.revalidate();
+						processPanel.requestFocus();
 					}
 				}
 			});
@@ -289,6 +325,39 @@ public class NetworkScreenClient extends JFrame {
 					}
 				}
 			});
+			shutDownBtn.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    InetSocketAddress inetKeyboardAddress;
+                    if(addressField.getText().equals("Input IP") && addressField.getForeground() == Color.LIGHT_GRAY){
+                        inetKeyboardAddress = new InetSocketAddress("localhost", SERVER_SHUTDOWN_PORT);    
+                    }
+                    else{
+                    inetKeyboardAddress = new InetSocketAddress(addressField.getText(), SERVER_SHUTDOWN_PORT);
+                    }
+                    try {
+                        shutdownsocket.connect(inetKeyboardAddress, 1000);
+                    } catch (IOException e1) {
+                        DebugMessage.printDebugMessage(e1);
+                        JLabel message = new JLabel("Connect Failed");
+                        JDialog dialog = new JDialog(jFrame,"Alert");
+                        dialog.add(message);
+                        dialog.setSize(150,150);
+                        dialog.setLocation(jFrame.getLocation().x+FRAME_WIDTH/2-75,jFrame.getLocation().y+FRAME_HEIGHT/2-75);
+                        dialog.setVisible(true);
+                        shutdownsocket = new Socket();
+                    }
+                    if(shutdownsocket.isConnected()) {
+                        System.out.println("Shut down computer in 10s");
+                        ShutDown shutdown = new ShutDown(jFrame, keyboardsocket);
+                        jFrame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+                        jFrame.setContentPane(shutdown);
+                        shutdown.requestFocus();
+                        jFrame.revalidate();
+                        shutdown.requestFocus();
+                    }
+                }
+            });
 		}		
 	}
 	public static void main(String[] args) {

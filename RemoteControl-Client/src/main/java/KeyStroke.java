@@ -41,9 +41,9 @@ class KeyStroke extends JPanel implements Runnable {
         JTextArea display = new JTextArea ( 16, 58 );
         display.setEditable ( false ); // set textArea non-editable
         String str = "";
-        for (int i = 0; i < 50; ++i)
-            str += "Some text\n";
-        display.setText(str);
+        // for (int i = 0; i < 50; ++i)
+        //     str += "Some text\n";
+        //display.setText(str);
         JScrollPane scroll = new JScrollPane ( display );
         scroll.setVerticalScrollBarPolicy ( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
         scroll.setBounds(20, 90, 550, 250);  
