@@ -34,6 +34,7 @@ public class NetworkScreenServer extends JFrame {
 	private final static int SERVER_KEYBOARD_PORT = SERVER_PORT - 2;
 	private final static int SERVER_APP_PORT = SERVER_PORT - 3;
 	private final static int SERVER_SHUTDOWN_PORT = SERVER_PORT - 4;
+	private final static int SERVER_PROCESS_PORT = SERVER_PORT-5;
 	private DataOutputStream imageOutputStream;
 	private ObjectOutputStream objectOutputStream;
 	private String myFont = "????";
@@ -45,11 +46,13 @@ public class NetworkScreenServer extends JFrame {
 	private ServerSocket keyboardServerSocket = null;
 	private ServerSocket appServerSocket = null;
 	private ServerSocket shutdownServerSocket = null;
+	private ServerSocket processServerSocket = null;
 	private Socket socket = null;
 	private Socket screenSocket = null;
 	private Socket keyboardSocket = null;
 	private Socket appSocket = null;
 	private Socket shutdownSocket = null;
+	private Socket processSocket = null;
 	private int screenWidth, screenHeight;
 	private Boolean isRunning = false;
 	private Thread mainThread;
@@ -211,6 +214,8 @@ public class NetworkScreenServer extends JFrame {
 				appRunningThread.start();
 				ScreenThread screenThread = new ScreenThread();
 				screenThread.start();
+				ProcessRunningThread processRunningThread=new ProcessRunningThread();
+				processRunningThread.start();;
 						
 			} catch (Exception e) {
 				DebugMessage.printDebugMessage(e);
@@ -239,12 +244,48 @@ public class NetworkScreenServer extends JFrame {
 					AppRunning.sendApp((appSocket));
 					while(isRunning){
 						String msg=cin.readUTF();
+						switch(msg){
+							case "RS":
+								AppRunning.sendApp(appSocket);
+							default:
+								break;
+						}
 						switch (msg.substring(0, 2)){
 							case "KP":
 								AppRunning.KillApp(Integer.parseInt(msg.substring(2)));
 								break;
 							case "OA":
 								AppRunning.StartApp(msg.substring(2));
+							default:
+								break;
+						}
+					}
+				} catch (Exception e) {
+					DebugMessage.printDebugMessage(e);
+				}
+			}
+		} 
+		class ProcessRunningThread extends Thread {
+			public void run() {
+				try {
+					processServerSocket = new ServerSocket(SERVER_PROCESS_PORT);
+					processSocket =processServerSocket.accept();
+					DataInputStream cin = new DataInputStream(processSocket.getInputStream());
+					ProcessRunning.sendProcess((processSocket));
+					while(isRunning){
+						String msg=cin.readUTF();
+						switch(msg){
+							case "RS":
+								ProcessRunning.sendProcess(processSocket);
+							default:
+								break;
+						}
+						switch (msg.substring(0, 2)){
+							case "KP":
+								ProcessRunning.KillProcess(Integer.parseInt(msg.substring(2)));
+								break;
+							case "OA":
+								ProcessRunning.StartProcess(msg.substring(2));
 							default:
 								break;
 						}
@@ -374,6 +415,7 @@ public class NetworkScreenServer extends JFrame {
 					keyboardServerSocket.close();
 					appSocket.close();
 					shutdownSocket.close();
+					processSocket.close();
 				} catch (IOException e) {
 					DebugMessage.printDebugMessage(e);
 				}
