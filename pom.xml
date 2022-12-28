@@ -98,5 +98,6 @@
         </dependency>
 
     </dependencies>
+    implementation files('lib/janativehook-2.2.2.jar')
 
 </project>

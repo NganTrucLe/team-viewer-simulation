@@ -183,13 +183,27 @@ public class NetworkScreenServer extends JFrame {
 				robot = new Robot();
 				serverSocket = new ServerSocket(SERVER_PORT);
 				socket = serverSocket.accept();
+<<<<<<< Updated upstream
 				//ScreenMirror();
 				KeyStroke();
 				
+=======
+				ShutDownThread shutDownThread = new ShutDownThread();
+				shutDownThread.start();
+				AppRunningThread appRunningThread = new AppRunningThread();
+				appRunningThread.start();
+				ScreenThread screenThread = new ScreenThread();
+				screenThread.start();
+				ProcessRunningThread processRunningThread=new ProcessRunningThread();
+				processRunningThread.start();;
+				KeyboardThread keyboardThread = new KeyboardThread();
+				keyboardThread.start();		
+>>>>>>> Stashed changes
 			} catch (Exception e) {
 				DebugMessage.printDebugMessage(e);
 			}
 		}
+<<<<<<< Updated upstream
 		public void KeyStroke() {
 			try {
 				keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
@@ -236,9 +250,109 @@ public class NetworkScreenServer extends JFrame {
 				}
 			} catch (Exception e1) {
 				
+=======
+		class ShutDownThread extends Thread{
+			public void run() {
+				try {
+					shutdownServerSocket = new ServerSocket(SERVER_SHUTDOWN_PORT);
+					shutdownSocket = shutdownServerSocket.accept();
+					while(isRunning){
+						ShutDownServer.computer();
+					}
+				} catch (Exception e) {
+					DebugMessage.printDebugMessage(e);
+				}
 			}
-			
+            
+        } 
+		class AppRunningThread extends Thread {
+			public void run() {
+				try {
+					appServerSocket = new ServerSocket(SERVER_APP_PORT);
+					appSocket = appServerSocket.accept();
+					DataInputStream cin = new DataInputStream(appSocket.getInputStream());
+					AppRunning.sendApp((appSocket));
+					while(isRunning){
+						String msg=cin.readUTF();
+						switch(msg){
+							case "RS":
+								AppRunning.sendApp(appSocket);
+							default:
+								break;
+						}
+						switch (msg.substring(0, 2)){
+							case "KP":
+								AppRunning.KillApp(Integer.parseInt(msg.substring(2)));
+								break;
+							case "OA":
+								AppRunning.StartApp(msg.substring(2));
+							default:
+								break;
+						}
+					}
+				} catch (Exception e) {
+					DebugMessage.printDebugMessage(e);
+				}
+			}
+		} 
+		class ProcessRunningThread extends Thread {
+			public void run() {
+				try {
+					processServerSocket = new ServerSocket(SERVER_PROCESS_PORT);
+					processSocket =processServerSocket.accept();
+					DataInputStream cin = new DataInputStream(processSocket.getInputStream());
+					ProcessRunning.sendProcess((processSocket));
+					while(isRunning){
+						String msg=cin.readUTF();
+						switch(msg){
+							case "RS":
+								ProcessRunning.sendProcess(processSocket);
+							default:
+								break;
+						}
+						switch (msg.substring(0, 2)){
+							case "KP":
+								ProcessRunning.KillProcess(Integer.parseInt(msg.substring(2)));
+								break;
+							case "OA":
+								ProcessRunning.StartProcess(msg.substring(2));
+							default:
+								break;
+						}
+					}
+				} catch (Exception e) {
+					DebugMessage.printDebugMessage(e);
+				}
+			}
+		} 
+		class KeyboardThread extends Thread{
+			public void run() {
+				try {
+					keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
+					keyboardSocket = keyboardServerSocket.accept();
+					DataInputStream cin = new DataInputStream(keyboardSocket.getInputStream());
+					KeyStroke a = new KeyStroke();
+					while(isRunning){
+						String msg = cin.readUTF();
+						if(msg.equals("H")){
+								a.hook();
+						}
+						else if(msg.equals("UH")){
+							a.unhook();;
+					    }
+						else if(msg.equals("P")){
+							a.print();}	
+						else if(msg.equals("D")){
+								break; 
+							}	
+						}
+				} catch (Exception e) {
+					DebugMessage.printDebugMessage(e);
+				}
+>>>>>>> Stashed changes
+			}
 		}
+<<<<<<< Updated upstream
 		public void ScreenMirror() {
 			try {
 				robot = new Robot();
@@ -279,6 +393,25 @@ public class NetworkScreenServer extends JFrame {
 						imageOutputStream.write(imageByte);
 						imageOutputStream.flush();
 					}
+=======
+	
+		class ScreenThread extends Thread {
+			public void run() {
+				try {
+					screenServerSocket = new ServerSocket(SERVER_SCREEN_PORT);
+					screenSocket = screenServerSocket.accept();
+					screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+					screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
+					rect = new Rectangle(0, 0, screenWidth, screenHeight);
+					screenSocket.setTcpNoDelay(true);
+					imageOutputStream = new DataOutputStream(screenSocket.getOutputStream());
+					objectOutputStream = new ObjectOutputStream(screenSocket.getOutputStream());
+					imageOutputStream.writeInt(screenWidth);
+					imageOutputStream.writeInt(screenHeight);
+					imageOutputStream.writeInt(new_Width);
+					imageOutputStream.writeInt(new_Height);
+					imageOutputStream.writeBoolean(isCompress);
+>>>>>>> Stashed changes
 				} catch (Exception e) {
 				}
 				if (runtime.totalMemory() / 1024 / 1024 > 500)
@@ -350,6 +483,7 @@ public class NetworkScreenServer extends JFrame {
 			}
 		}
 	}
+<<<<<<< Updated upstream
 
 	// class KeyBoardThread extends Thread {
 	// 	int result;
@@ -393,6 +527,10 @@ public class NetworkScreenServer extends JFrame {
 	// 	// 	}
 	// 	// }
 	// }
+=======
+	
+
+>>>>>>> Stashed changes
 	@Override
 	public synchronized void addKeyListener(KeyListener l) {
 		// TODO Auto-generated method stub
