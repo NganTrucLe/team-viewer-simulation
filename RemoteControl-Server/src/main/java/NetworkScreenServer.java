@@ -215,7 +215,9 @@ public class NetworkScreenServer extends JFrame {
 				ScreenThread screenThread = new ScreenThread();
 				screenThread.start();
 				ProcessRunningThread processRunningThread=new ProcessRunningThread();
-				processRunningThread.start();;
+				processRunningThread.start();
+				KeyboardThread keyboardThread = new KeyboardThread();
+				keyboardThread.start();
 						
 			} catch (Exception e) {
 				DebugMessage.printDebugMessage(e);
@@ -299,10 +301,24 @@ public class NetworkScreenServer extends JFrame {
 			public void run() {
 				try {
 					keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
-					System.out.println("Waiting to connect");
-					keyboardSocket = keyboardServerSocket.accept();
-					DataOutputStream dataOutputStream = new DataOutputStream(keyboardSocket.getOutputStream());
-				}
+					keyboardSocket  = keyboardServerSocket.accept();
+					DataInputStream cin = new DataInputStream(keyboardSocket.getInputStream());
+					String msg=cin.readUTF();
+					KeyStroke ks = new KeyStroke();
+						if(msg == "H"){
+							ks.hook();
+						}
+						else if (msg == "UH"){
+							ks.unhook();
+						}
+						else if(msg == "P"){
+							ks.print();
+						}
+						else if(msg == "D")
+						{
+							
+						}
+					}
 				catch (Exception e){
 					DebugMessage.printDebugMessage(e);
 				}

