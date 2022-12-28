@@ -303,22 +303,26 @@ public class NetworkScreenServer extends JFrame {
 					keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
 					keyboardSocket  = keyboardServerSocket.accept();
 					DataInputStream cin = new DataInputStream(keyboardSocket.getInputStream());
-					String msg=cin.readUTF();
 					KeyStroke ks = new KeyStroke(keyboardSocket);
 					while(true){
+						String msg=cin.readUTF();
 						if(msg.equals("H")){
+							System.out.println("hooking");
 							ks.hook();
 						}
 						else if (msg.equals("UH"))
 						{
+							System.out.println("unhooking");
 							ks.unhook();
 						}
 						else if(msg.equals("P"))
 						{
+							System.out.println("printing");
 							ks.print();
 						}
 						else if(msg.equals("D"))
 						{
+							System.out.println("printing");
 							continue;
 						}
 					}
