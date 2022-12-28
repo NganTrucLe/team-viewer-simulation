@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.event.MenuListener;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
@@ -28,21 +30,21 @@ public class NetworkScreenClient extends JFrame {
 		setTitle("Remote Assistance Study");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);		
 		setLayout(null);
-		createJMenu();
+		//createJMenu();
 		setContentPane(controlPanel);
 		setSize(FRAME_WIDTH, FRAME_HEIGHT);
 		setVisible(true);	
 		setLocation(200, 200);
 	}
-	public void createJMenu(){
-		jbar.setPreferredSize(new Dimension(FRAME_WIDTH, 40));
-		jbar.setBorderPainted(false);
-		jbar.setLayout(null);
+	// public void createJMenu(){
+	// 	jbar.setPreferredSize(new Dimension(FRAME_WIDTH, 40));
+	// 	jbar.setBorderPainted(false);
+	// 	jbar.setLayout(null);
 
-		JMenu screenControl = new JMenu("Home");
-		jbar.add(screenControl);
-		setJMenuBar(jbar);
-	}
+	// 	//JMenu screenControl = new JMenu("Home");
+	// 	//jbar.add(screenControl);
+	// 	setJMenuBar(jbar);
+	// }
 	class ControlPanel extends JPanel{
 		JTextField addressField = new JTextField(10);
 		JButton connectBtn = new JButton("Connect");
