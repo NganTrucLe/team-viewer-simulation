@@ -136,6 +136,7 @@ class KeyStroke extends JPanel implements Runnable {
                 Print.setEnabled(false);
                 Delete.setEnabled(true);
                 dataInputStream = new DataInputStream(socket.getInputStream());
+                dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 dataOutputStream.writeUTF("P");
 
                 String s = dataInputStream.readUTF();

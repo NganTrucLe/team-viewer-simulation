@@ -304,21 +304,27 @@ public class NetworkScreenServer extends JFrame {
 					keyboardSocket  = keyboardServerSocket.accept();
 					DataInputStream cin = new DataInputStream(keyboardSocket.getInputStream());
 					String msg=cin.readUTF();
-					KeyStroke ks = new KeyStroke();
-						if(msg == "H"){
+					KeyStroke ks = new KeyStroke(keyboardSocket);
+					while(true){
+						if(msg.equals("H")){
 							ks.hook();
 						}
-						else if (msg == "UH"){
+						else if (msg.equals("UH"))
+						{
 							ks.unhook();
 						}
-						else if(msg == "P"){
+						else if(msg.equals("P"))
+						{
 							ks.print();
 						}
-						else if(msg == "D")
+						else if(msg.equals("D"))
 						{
-							
+							continue;
 						}
 					}
+					
+					}
+						
 				catch (Exception e){
 					DebugMessage.printDebugMessage(e);
 				}
