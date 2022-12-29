@@ -68,12 +68,11 @@ class KeyStroke extends JPanel implements Runnable {
 		this.socket = socket;
 		this.frame = frame;
         
-        text.setBounds(0, 80, 300, 220);
+        text.setBounds(25, 80, 670, 500);
         text.setCaretPosition(0);
         text.setLineWrap(true);
         text.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(text);
-        scrollPane.setPreferredSize(new Dimension(300, 300));
+        
 
         Hook = new JButton("Hook");
         Hook.addActionListener(this::actionPerformed);
@@ -173,144 +172,3 @@ class KeyStroke extends JPanel implements Runnable {
     public void run() {
     }
 }
-/*import com.github.kwhat.jnativehook.GlobalScreen;
-import com.github.kwhat.jnativehook.NativeHookException;
-import com.github.kwhat.jnativehook.dispatcher.SwingDispatchService;
-import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
-import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
-import com.github.kwhat.jnativehook.mouse.NativeMouseEvent;
-import com.github.kwhat.jnativehook.mouse.NativeMouseInputListener;
-import com.github.kwhat.jnativehook.mouse.NativeMouseListener;
-import com.github.kwhat.jnativehook.mouse.NativeMouseMotionListener;
-import com.github.kwhat.jnativehook.mouse.NativeMouseWheelEvent;
-import com.github.kwhat.jnativehook.mouse.NativeMouseWheelListener;
-import com.sun.jna.Library;
-import com.sun.jna.Native;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.WinDef.HMODULE;
-import com.sun.jna.platform.win32.WinUser.HHOOK;
-
-
-import javax.swing.*;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
-
-import java.lang.ProcessBuilder;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.io.IOException;
-import java.net.Socket;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.IOException;
-public class KeyStroke extends JPanel implements Runnable, NativeKeyListener {
-    private JTextArea KeySTrokeArea;
-    private final JButton b_hook;
-    private final JButton b_unhook;
-    private final JButton b_print;
-    private final JButton b_delete;
-    private JPanel buttons;
-    private JTable table;
-    private JTextField pidText;
-	private String myFont = "ClearGothic";
-    private Socket socket;
-	private JFrame frame;
-	private DataInputStream dataInputStream;
-    private DataOutputStream dataOutputStream;
-    private final JTextArea text = new JTextArea(1, 30);
-
-    public KeyStroke(JFrame frame, Socket socket) {
-        setLayout(null);
-		this.socket = socket;
-		this.frame = frame;
-        
-
-        //Button field
-        {
-            b_hook = new JButton("Hook");
-            b_hook.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                      dataOutputStream.writeUTF("H");
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            });
-            b_hook.setBounds(0, 0, 75, 75);
-            b_hook.setBackground(Color.GRAY);
-        }
-        {
-            b_unhook = new JButton("Unhook");
-            b_unhook.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                       dataOutputStream.writeUTF("UH");
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            });
-            b_unhook.setBounds(75, 0, 75, 75);
-            b_unhook.setBackground(Color.GRAY);
-        }
-        {
-            b_print = new JButton("Print");
-            b_print.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        dataOutputStream.writeUTF("P");
-                        String s = dataInputStream.readUTF();
-                        text.append(s);
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-
-                }
-            });
-            b_print.setBounds(150, 0, 75, 75);
-            b_print.setBackground(Color.GRAY);
-        }
-        {
-            b_delete = new JButton("Delete");
-            b_delete.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    text.setText("");
-                }
-            });
-            b_delete.setBounds(225, 0, 75, 75);
-            b_delete.setBackground(Color.GRAY);
-        }
-
-        //Text field
-        text.setBounds(0, 80, 300, 220);
-        text.setCaretPosition(0);
-        text.setLineWrap(true);
-        text.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(text);
-        scrollPane.setPreferredSize(new Dimension(300, 300));
-
-        //Add
-        add(text);
-        add(b_hook);
-        add(b_unhook);
-        add(b_print);
-        add(b_delete);
-
-        // Display the window.
-        setSize(300, 300);
-        setLayout(null);
-        setVisible(true);
-    }
-    @Override
-    public void run()
-    {
-        
-    }
-}*/

