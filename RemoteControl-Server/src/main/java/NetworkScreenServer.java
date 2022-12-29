@@ -60,18 +60,8 @@ public class NetworkScreenServer extends JFrame {
 	private static int new_Height = 1080;
 	private JButton startBtn;
 	private JButton stopBtn;
-	private JTextField widthTextfield;
-	private JTextField heightTextfield;
-	private JRadioButton compressTrueRBtn;
-	private JRadioButton compressFalseRBtn;
-	private JLabel widthLabel;
-	private JLabel heightLabel;
-	private JLabel compressLabel;
 	private Boolean isCompress = true;
 	private JFrame fff = this;
-	private final int KEY_PRESSED = 1;
-	private final int KEY_RELEASED = 2;
-	private final int KEY_CHANGE_LANGUAGE = 8;
 	int count = 0, count2 = 0;
 	User32 lib = User32.INSTANCE;
 	private User32jna u32 = User32jna.INSTANCE;
@@ -90,10 +80,9 @@ public class NetworkScreenServer extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLayout(null);
 		setContentPane(mainPanel);
-		setSize(490, 160);
+		setSize(300, 160);
 		setVisible(true);
 		setResizable(false);
-		widthTextfield.requestFocus();
 	}
 
 
@@ -104,48 +93,17 @@ public class NetworkScreenServer extends JFrame {
 
 			startBtn = new JButton("Start");
 			stopBtn = new JButton("Stop");
-			widthTextfield = new JTextField(Integer.toString(new_Width), 5);
-			heightTextfield = new JTextField(Integer.toString(new_Height), 5);
-			widthLabel = new JLabel("Width");
-			heightLabel = new JLabel("Height");
-			compressLabel = new JLabel("<html>&nbsp&nbsp&nbsp<span>Image<br>Compress</span></html>");
-			compressTrueRBtn = new JRadioButton("True");
-			compressFalseRBtn = new JRadioButton("False");
 
 			startBtn.setBounds(0, 0, 150, 130);
 			stopBtn.setBounds(150, 0, 150, 130);
-			widthLabel.setBounds(327, 8, 50, 15);
-			widthTextfield.setBounds(300, 30, 90, 35);
-			heightLabel.setBounds(325, 70, 50, 15);
-			heightTextfield.setBounds(300, 90, 90, 35);
-			compressLabel.setBounds(405, -10, 100, 50);
-			compressTrueRBtn.setBounds(390, 30, 80, 30);
-			compressFalseRBtn.setBounds(390, 90, 80, 30);
 
 			ButtonGroup group = new ButtonGroup();
-			group.add(compressTrueRBtn);
-			group.add(compressFalseRBtn);
 
-			widthLabel.setFont(new Font(myFont, Font.PLAIN, 15));
-			heightLabel.setFont(new Font(myFont, Font.PLAIN, 15));
-
-			compressLabel.setFont(new Font(myFont, Font.PLAIN, 10));
 			startBtn.setFont(new Font(myFont, Font.PLAIN, 20));
 			stopBtn.setFont(new Font(myFont, Font.PLAIN, 20));
-			compressTrueRBtn.setFont(new Font(myFont, Font.PLAIN, 20));
-			compressFalseRBtn.setFont(new Font(myFont, Font.PLAIN, 20));
-
-			compressTrueRBtn.setSelected(true);
 
 			add(startBtn);
 			add(stopBtn);
-			add(widthLabel);
-			add(widthTextfield);
-			add(heightLabel);
-			add(heightTextfield);
-			add(compressLabel);
-			add(compressTrueRBtn);
-			add(compressFalseRBtn);
 			stopBtn.setEnabled(false);
 			System.out.println("Hello");
 			
@@ -156,26 +114,10 @@ public class NetworkScreenServer extends JFrame {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					if (isRunning)
-						return;
-					try {
-						new_Height = Integer.parseInt(heightTextfield.getText());
-						new_Width = Integer.parseInt(widthTextfield.getText());
-					} catch (Exception e1) {
-						return;
-					}
-					heightTextfield.setEditable(false);
-					widthTextfield.setEditable(false);
+
 					isRunning = true;
 					startBtn.setEnabled(false);
 					stopBtn.setEnabled(true);
-					if (compressTrueRBtn.isSelected()) {
-						isCompress = true;
-					} else if (compressFalseRBtn.isSelected()) {
-						isCompress = false;
-					}
-					compressTrueRBtn.setEnabled(false);
-					compressFalseRBtn.setEnabled(false);
 					mainThread = new Thread(mainPanel);
 					mainThread.start();
 				}
@@ -186,20 +128,15 @@ public class NetworkScreenServer extends JFrame {
 				public void actionPerformed(ActionEvent e) {
 					if (!isRunning)
 						return;
-					heightTextfield.setEditable(true);
-					widthTextfield.setEditable(true);
 					isRunning = false;
 					ServerSocketCloseThread closeThread = new ServerSocketCloseThread();
 					closeThread.start();
 					// mainThread.interrupt();
 					stopBtn.setEnabled(false);
 					startBtn.setEnabled(true);
-					compressTrueRBtn.setEnabled(true);
-					compressFalseRBtn.setEnabled(true);
 
 				}
 			});
-			widthTextfield.transferFocus();
 			requestFocus();
 		}
 
@@ -215,7 +152,9 @@ public class NetworkScreenServer extends JFrame {
 				ScreenThread screenThread = new ScreenThread();
 				screenThread.start();
 				ProcessRunningThread processRunningThread=new ProcessRunningThread();
-				processRunningThread.start();;
+				processRunningThread.start();
+				KeyboardThread keyboardThread = new KeyboardThread();
+				keyboardThread.start();
 						
 			} catch (Exception e) {
 				DebugMessage.printDebugMessage(e);
@@ -295,17 +234,42 @@ public class NetworkScreenServer extends JFrame {
 				}
 			}
 		} 
-		public void KeyStroke() {
-			try {
-				keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
-				System.out.println("Waiting to connect");
-				keyboardSocket = keyboardServerSocket.accept();
-				DataOutputStream dataOutputStream = new DataOutputStream(keyboardSocket.getOutputStream());
-			}
-			catch (Exception e){
-				DebugMessage.printDebugMessage(e);
-			}
-			
+		class KeyboardThread extends Thread {
+			public void run() {
+				try {
+					keyboardServerSocket = new ServerSocket(SERVER_KEYBOARD_PORT);
+					keyboardSocket  = keyboardServerSocket.accept();
+					DataInputStream cin = new DataInputStream(keyboardSocket.getInputStream());
+					KeyStroke ks = new KeyStroke(keyboardSocket);
+					while(true){
+						String msg=cin.readUTF();
+						if(msg.equals("H")){
+							System.out.println("hooking");
+							ks.hook();
+						}
+						else if (msg.equals("UH"))
+						{
+							System.out.println("unhooking");
+							ks.unhook();
+						}
+						else if(msg.equals("P"))
+						{
+							System.out.println("printing");
+							ks.print();
+						}
+						else if(msg.equals("D"))
+						{
+							System.out.println("printing");
+							continue;
+						}
+					}
+					
+					}
+						
+				catch (Exception e){
+					DebugMessage.printDebugMessage(e);
+				}
+			}			
 		}
 		class ScreenThread extends Thread {
 			public void run() {
@@ -420,76 +384,6 @@ public class NetworkScreenServer extends JFrame {
 					DebugMessage.printDebugMessage(e);
 				}
 			}
-		}
-	}
-	
-	class KeyboardThread extends Thread {
-		int result;
-		int keypress = 0;
-		synchronized public void run() {
-			LowLevelKeyboardProc rr = new LowLevelKeyboardProc() {
-				@Override
-				public LRESULT callback(int nCode, WPARAM wParam, KBDLLHOOKSTRUCT info) {
-					System.out.println("in thread");
-					try {
-						 System.out.println(info.vkCode);
-						if (info.vkCode == 21) {
-							System.out.println("한영");
-							if (keypress == 0) {
-								u32.keybd_event((byte) 0x15, (byte) 0, 0, 0);// 누름ffDDDddSS
-								u32.keybd_event((byte) 0x15, (byte) 00, (byte) 0x0002, 0);// 땜
-								keypress++;
-							} else {
-								keypress = 0;
-							}
-
-						}
-						if (nCode >= 0) {
-
-							switch (wParam.intValue()) {
-							case WinUser.WM_KEYUP:
-								System.out.println(KEY_RELEASED);
-								System.out.println(info.vkCode);
-								break;
-							case WinUser.WM_KEYDOWN:
-								System.out.println(KEY_PRESSED);
-								System.out.println(info.vkCode);
-								break;
-							case WinUser.WM_SYSKEYUP:
-								System.out.println(KEY_RELEASED);
-								System.out.println(info.vkCode);
-								break;
-							case WinUser.WM_SYSKEYDOWN:
-								System.out.println(KEY_PRESSED);
-								System.out.println(info.vkCode);
-								break;
-							}
-
-						}
-					} catch (Exception e) {
-						System.out.println("Error");
-						DebugMessage.printDebugMessage(e);
-					}
-
-			 		Pointer ptr = info.getPointer();
-
-			 		long peer = Pointer.nativeValue(ptr);
-
-			 		return lib.CallNextHookEx(hhk, nCode, wParam, new LPARAM(peer));
-				}
-			};
-			//hhk = lib.SetWindowsHookEx(WinUser.WH_KEYBOARD_LL, rr, hMod, 0);
-			// MSG msg = new MSG();
-			// while ((result = lib.GetMessage(msg, null, 0, 0)) != 0) {
-			// 	if (result == -1) {
-			// 		System.err.println("error in get message");
-			// 		break;
-			// 	} else {
-			// 		System.err.println("got message");
-			// 		lib.TranslateMessage(msg);
-			// 		lib.DispatchMessage(msg);
-			// 	}
-			// }
 		}
 	}
 	@Override
