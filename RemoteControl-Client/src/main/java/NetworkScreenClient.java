@@ -30,21 +30,11 @@ public class NetworkScreenClient extends JFrame {
 		setTitle("Remote Assistance Study");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);		
 		setLayout(null);
-		//createJMenu();
 		setContentPane(controlPanel);
 		setSize(FRAME_WIDTH, FRAME_HEIGHT);
 		setVisible(true);	
 		setLocation(200, 200);
 	}
-	// public void createJMenu(){
-	// 	jbar.setPreferredSize(new Dimension(FRAME_WIDTH, 40));
-	// 	jbar.setBorderPainted(false);
-	// 	jbar.setLayout(null);
-
-	// 	//JMenu screenControl = new JMenu("Home");
-	// 	//jbar.add(screenControl);
-	// 	setJMenuBar(jbar);
-	// }
 	class ControlPanel extends JPanel{
 		JTextField addressField = new JTextField(10);
 		JButton connectBtn = new JButton("Connect");
@@ -97,7 +87,7 @@ public class NetworkScreenClient extends JFrame {
 						addressField.setText("");
 						addressField.setForeground(Color.BLACK);
 					}
-					else if(addressField.getText().equals("Connect Fail")){
+					else if(addressField.getText().equals("Connect failed")){
 						addressField.setText("");
 						addressField.setForeground(Color.BLACK);
 					}
@@ -108,7 +98,7 @@ public class NetworkScreenClient extends JFrame {
 				public void keyReleased(KeyEvent e) {
 					if(addressField.getText().equals("")){
 						addressField.setForeground(Color.LIGHT_GRAY);
-						addressField.setText("123.123.123.123");
+						addressField.setText("Input IP");
 						addressField.setCaretPosition(0);
 					}					
 				}
@@ -118,7 +108,7 @@ public class NetworkScreenClient extends JFrame {
 					if(e.getKeyCode() == KeyEvent.VK_ENTER){
 						connectBtn.doClick();
 					}
-					if(addressField.getText().equals("123.123.123.123") && addressField.getForeground() == Color.LIGHT_GRAY){
+					if(addressField.getText().equals("Input IP") && addressField.getForeground() == Color.LIGHT_GRAY){
 						addressField.setText("");
 						addressField.setForeground(Color.BLACK);
 					}
@@ -175,7 +165,7 @@ public class NetworkScreenClient extends JFrame {
 							dialog.setLocation(jFrame.getLocation().x+FRAME_WIDTH/2-75,jFrame.getLocation().y+FRAME_HEIGHT/2-75);
 							dialog.setVisible(true);
 							System.out.println("Connected");
-							Thread.sleep(500);
+							Thread.sleep(1000);
 							dialog.setVisible(false);
 							exitBtn.setEnabled(true);
 							processBtn.setEnabled(true);

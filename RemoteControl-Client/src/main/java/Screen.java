@@ -57,7 +57,7 @@ public class Screen extends JPanel implements Runnable{
         this.frame = frame;
 		FPSlabel = new JLabel("FPS : " + Integer.toString(FPScount));
 		FPSlabel.setFont(new Font(myFont, Font.BOLD, 20));
-		FPSlabel.setBounds(20, 370, 100, 50);
+		FPSlabel.setBounds(20, 390, 100, 50);
 		add(FPSlabel);
 		JButton screenShotBtn = new JButton("Screen shot");
 		screenShotBtn.setBounds(550, 20, 150, 50);
